@@ -35,10 +35,19 @@ screen). Single user for now; sharing/accounts are a future phase.
 ## Tech
 - React + TypeScript + Vite; static site deployed to GitHub Pages from `main`
   via `.github/workflows/deploy.yml`. `base: './'` in `vite.config.ts`.
-- Planned: React Flow (`@xyflow/react`) for the canvas, Dexie for IndexedDB,
-  JSZip for the save file.
-- Folders: `src/components/` UI, `src/model/` types + relationship maths + dates,
-  `src/layout/` tree layout, `src/db/` IndexedDB, `src/storage/` save files.
+- Dexie (IndexedDB auto-save), JSZip (save file). Planned: React Flow
+  (`@xyflow/react`) for the tree canvas.
+- Folders:
+  - `src/model/`: types, date parsing (`dates.ts`), person helpers
+  - `src/state/`: `treeReducer.ts` (all edits go through it; bumps `revision`
+    and sets `dirty`), `TreeProvider.tsx` (save/open/auto-save/notices),
+    `useTree()` hook in `treeContext.ts`
+  - `src/storage/`: `fileFormat.ts` (.familytree zip, versioned; add defaults
+    for new fields in `readTreeFile` so old files keep opening),
+    `fileAccess.ts` (pickers/download), `autosave.ts` (Dexie), `images.ts`
+  - `src/components/`: UI. `PeopleBoard` is a temporary grid until the tree view.
+  - Planned: `src/layout/` for tree layout.
+- End-to-end checks are run ad hoc with Playwright against `npm run preview`.
 
 ## Commands
 - `npm run dev`: local dev server
@@ -50,7 +59,7 @@ Run lint, test and build before every push.
 
 ## Roadmap
 1. Foundation (shell, deploy). **Done.**
-2. People + saving (form, photos, placeholders, .familytree save/open, auto-save recovery)
+2. People + saving (form, photos, placeholders, .familytree save/open, auto-save recovery). **Done.**
 3. Relationships + derived relatives
 4. Tree visualization (Default view)
 5. Details side panel (Summary, Biography, Photo Gallery, Relatives, Events,
