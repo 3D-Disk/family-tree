@@ -28,7 +28,11 @@ Safari and Firefox download a new, dated copy each time you save instead.
   children.
 - **Click a card** to see that person's details: Summary, Biography,
   Relatives, Life events, Burial, Notable details and Links, with a menu to
-  jump between them. Click **Edit details** to change anything. Hover over a card for quick
+  jump between them. Click **Edit details** to change anything, or
+  **Delete person** to remove them.
+- **Photos:** in Edit details, use **+ Add photos** in the Photo gallery to
+  add several pictures with captions and dates. Click a photo in the Details
+  view to see it full size and step through the rest with the arrows. Hover over a card for quick
   "+ Parent", "+ Partner", "+ Child" and "+ Sibling" buttons.
 - **Save** (or Ctrl+S / ⌘S) whenever you like. "● Unsaved changes" at the top
   means there is work not yet in your file.

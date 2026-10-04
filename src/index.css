@@ -104,14 +104,6 @@ body {
   gap: 10px;
 }
 
-.views-select {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
 select,
 .search {
   font: inherit;
@@ -1071,8 +1063,108 @@ select:focus {
   font-style: italic;
 }
 
-.details-edit {
+.details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 10px;
+}
+
+/* Photo gallery */
+
+.gallery-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.gallery-tile {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg);
+  cursor: zoom-in;
+}
+
+.gallery-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s;
+}
+
+.gallery-tile:hover img {
+  transform: scale(1.04);
+}
+
+.gallery-caption {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.gallery-date {
+  color: var(--text-muted);
+}
+
+.gallery-editor {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.gallery-edit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gallery-edit-item {
+  display: flex;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.gallery-thumb {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--neutral-bg);
+}
+
+.gallery-edit-fields {
+  flex: 1;
+  min-width: 0;
+}
+
+.gallery-edit-fields .field {
+  margin-bottom: 6px;
+}
+
+.gallery-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .section-nav {
@@ -1344,10 +1436,54 @@ select:focus {
   background: rgb(20 18 15 / 0.85);
 }
 
+.photo-viewer figure {
+  margin: 0;
+  cursor: default;
+}
+
+.photo-viewer figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 10px;
+  color: #f4efe6;
+  font-size: 0.95rem;
+}
+
+.photo-viewer-count {
+  margin-left: auto;
+  color: rgb(244 239 230 / 0.7);
+  white-space: nowrap;
+}
+
+.photo-viewer-nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 64px;
+  font-size: 2.2rem;
+  line-height: 1;
+  border: 0;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.85);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.photo-viewer-nav.prev {
+  left: 16px;
+}
+
+.photo-viewer-nav.next {
+  right: 16px;
+}
+
 .photo-viewer img {
   display: block;
   max-width: min(92vw, 1200px);
-  max-height: 88vh;
+  max-height: 82vh;
+  margin: 0 auto;
   border-radius: 8px;
   box-shadow: 0 16px 48px rgb(0 0 0 / 0.5);
 }

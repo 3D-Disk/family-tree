@@ -74,6 +74,14 @@ Single user for now; sharing/accounts are a future phase.
   `photoCrop` (`src/model/photoCrop.ts`); a 256px framed square is `avatarId`
   and is what cards show (`cardPhoto()`). Keep all three in sync via the
   reducer's `PhotoUpdate`.
+- Gallery: `Person.gallery` entries point at a full image (`photoId`) and a
+  320px thumbnail (`thumbId`) in the photo store. New images go to the
+  reducer via `savePerson`'s `newPhotos`; on every save the reducer drops any
+  image the person no longer uses (`photoIdsOf`). Never share a photo id
+  between people or between profile and gallery ("Make profile photo" copies).
+- `PhotoViewer` takes a list of photos (arrows/← → keys, captions, counter).
+- Deleting a person goes through `DeletePersonButton` (Details and form).
+- The header's Views dropdown was removed until Phase 8 adds Views.
 - Family links are edited in `components/family/FamilySection.tsx` inside the
   person form, on a draft copy of the family; `savePerson` with `family`
   commits the person and links together. Adding a sibling to someone with no
@@ -99,11 +107,11 @@ Run lint, test and build before every push.
 2. People + saving (form, photos, placeholders, .familytree save/open, auto-save recovery). **Done.**
 3. Relationships + derived relatives. **Done.**
 4. Tree visualization (Default view). **Done.**
-5. Details side panel: Summary, Biography, Relatives, Life events, Burial,
-   Notable details, Links. **Done.** Photo Gallery is next (5b).
+5. Details side panel: Summary, Biography, Photos (gallery), Relatives, Life
+   events, Burial, Notable details, Links. **Done.**
 6. No Relations tray + search (**done**, as filters in the People list);
    focus-on-person still to do after the tree
 7. New Person Questionnaire (wizard)
-8. Views (drag to reorder, save/select)
+8. Views (drag to reorder, save/select; re-add the header Views dropdown)
 9. Free-placement toggle for views
 10. Later: GEDCOM, sharing/accounts, print/export image

@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode, typ
 import { formatDate, parseDate } from '../model/dates.ts'
 import { cardPhoto, fullName, newId } from '../model/person.ts'
 import { DEFAULT_CROP, type PhotoCrop } from '../model/photoCrop.ts'
-import type { Family, Gender, LifeEvent, Person } from '../model/types.ts'
+import type { Family, Gender, LifeEvent, Person, PhotoStore } from '../model/types.ts'
 import { useTree } from '../state/treeContext.ts'
 import type { PhotoUpdate } from '../state/treeReducer.ts'
 import { preparePhoto, renderAvatar } from '../storage/images.ts'
@@ -12,6 +12,8 @@ import FamilySection, { type AddKind } from './family/FamilySection.tsx'
 import { BurialFields, EventsEditor, LinksEditor, NotableEditor } from './edit/DetailEditors.tsx'
 import PhotoAdjuster from './PhotoAdjuster.tsx'
 import PhotoViewer from './PhotoViewer.tsx'
+import DeletePersonButton from './DeletePersonButton.tsx'
+import GalleryEditor from './edit/GalleryEditor.tsx'
 
 interface Props {
   person: Person
@@ -74,13 +76,22 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
   const [adjusting, setAdjusting] = useState<Adjusting | null>(null)
   const [confirmRemove, setConfirmRemove] = useState(false)
   const [viewing, setViewing] = useState(false)
+  /** Gallery images added during this edit (saved with the person). */
+  const [newPhotos, setNewPhotos] = useState<PhotoStore>({})
   const fileInput = useRef<HTMLInputElement>(null)
 
   const dirty = photo !== undefined || !sameFields(draft, person) || familyEdited
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange])
 
   function commit() {
-    dispatch({ type: 'savePerson', person: draft, photo, family: familyEdited ? draftFamily : undefined })
+    const used = new Set(draft.gallery.flatMap((g) => [g.photoId, g.thumbId]))
+    dispatch({
+      type: 'savePerson',
+      person: draft,
+      photo,
+      family: familyEdited ? draftFamily : undefined,
+      newPhotos: Object.fromEntries(Object.entries(newPhotos).filter(([id]) => used.has(id))),
+    })
     notify(`${isNew ? 'Added' : 'Updated'} ${fullName(draft)}`)
   }
   useEffect(() => {
@@ -132,13 +143,6 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
   function onSubmit(e: FormEvent) {
     e.preventDefault()
     commit()
-    onDone()
-  }
-
-  function onDelete() {
-    if (!window.confirm(`Delete ${fullName(person)}? Their links to other family members will be removed too. This can't be undone.`)) return
-    dispatch({ type: 'deletePerson', id: person.id })
-    notify(`Deleted ${fullName(person)}`)
     onDone()
   }
 
@@ -281,6 +285,18 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
       </fieldset>
 
       <fieldset>
+        <legend>Photo gallery</legend>
+        <GalleryEditor
+          items={draft.gallery}
+          photo={(id) => newPhotos[id] ?? state.photos[id]}
+          onChange={(gallery) => set('gallery', gallery)}
+          onAddPhotos={(added) => setNewPhotos((p) => ({ ...p, ...added }))}
+          onMakeProfile={(full) => setAdjusting({ blob: full, crop: DEFAULT_CROP })}
+          onError={(m) => notify(m, 'error')}
+        />
+      </fieldset>
+
+      <fieldset>
         <legend>Links</legend>
         <LinksEditor links={draft.links} onChange={(links) => set('links', links)} />
       </fieldset>
@@ -293,11 +309,7 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
       </fieldset>
 
       <div className="form-actions">
-        {!isNew && (
-          <button type="button" className="btn btn-danger" onClick={onDelete}>
-            Delete person
-          </button>
-        )}
+        {!isNew && <DeletePersonButton person={person} onDeleted={onDone} />}
         <span className="spacer" />
         <button type="button" className="btn" onClick={onCancel}>
           Cancel
@@ -317,7 +329,7 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
       )}
 
       {viewing && originalPhoto && (
-        <PhotoViewer photo={originalPhoto} alt={`Photo of ${fullName(draft)}`} onClose={() => setViewing(false)} />
+        <PhotoViewer photos={[{ blob: originalPhoto }]} alt={`Photo of ${fullName(draft)}`} onClose={() => setViewing(false)} />
       )}
 
       {confirmRemove && (

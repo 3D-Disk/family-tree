@@ -177,6 +177,7 @@ export default function App() {
             <PersonDetails
               personId={panelPerson.id}
               onEdit={() => editPerson(panelPerson.id)}
+              onDeleted={closePanel}
               onOpenPerson={(id) => {
                 selectPerson(id)
                 focusOn(id)
