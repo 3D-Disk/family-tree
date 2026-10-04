@@ -5,6 +5,7 @@ import {
   checkParentLink,
   checkParentType,
   checkPartnership,
+  childrenNeedingParent,
   hasNoRelations,
   isAncestor,
   parentLinksOf,
@@ -59,6 +60,14 @@ describe('relationship rules', () => {
     expect(f.people.gpa).toBeUndefined()
     expect(Object.values(f.parentLinks).map((l) => l.parentId)).toEqual(['gma'])
     expect(f.partnerships).toEqual({})
+  })
+
+  it('finds children who still need a second parent', () => {
+    let f = family([['mom', 'female'], ['a', 'male'], ['b', 'female'], ['ex', 'male']])
+    f = addParentLink(addParentLink(f, 'mom', 'a'), 'mom', 'b')
+    f = addParentLink(f, 'ex', 'b')
+    expect(childrenNeedingParent(f, 'mom')).toEqual(['a'])
+    expect(childrenNeedingParent(f, 'ex')).toEqual([])
   })
 
   it('knows who has no relations', () => {

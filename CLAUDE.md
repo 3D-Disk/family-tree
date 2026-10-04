@@ -41,7 +41,9 @@ screen). Single user for now; sharing/accounts are a future phase.
   - `src/model/`: types, date parsing (`dates.ts`), person helpers,
     `relationships.ts` (lookups, rules like "no loops / max 2 biological
     parents", and pure edit functions), `relatives.ts` (derived relatives with
-    gendered labels). `testFamily.ts` builds made-up families for tests.
+    gendered labels), `filters.ts` (search + People-list filters; add a
+    filter as one entry in `FILTERS`). `testFamily.ts` builds made-up
+    families for tests.
   - `src/state/`: `treeReducer.ts` (all edits go through it; bumps `revision`
     and sets `dirty`), `TreeProvider.tsx` (save/open/auto-save/notices),
     `useTree()` hook in `treeContext.ts`
@@ -58,7 +60,11 @@ screen). Single user for now; sharing/accounts are a future phase.
 - Family links are edited in `components/family/FamilySection.tsx` inside the
   person form, on a draft copy of the family; `savePerson` with `family`
   commits the person and links together. Adding a sibling to someone with no
-  parents creates an "Unknown parent" person to connect them.
+  parents creates an "Unknown parent" person to connect them. When adding a
+  partner/parent/child, `RelativePicker` offers tick-boxes (`extrasFor`), e.g.
+  "Also make them a parent of: ☑ Ann" for children with fewer than two parents.
+- `PeopleList` (left) shows search/filter results and stays open while a
+  person is edited in the side panel (right). Non-matching cards are dimmed.
 - The side panel form reports unsaved edits to `App.tsx`; every way of leaving
   the form goes through `requestLeave()` so the "Save changes?" pop-up shows.
   - Planned: `src/layout/` for tree layout.
@@ -79,7 +85,8 @@ Run lint, test and build before every push.
 4. Tree visualization (Default view)
 5. Details side panel (Summary, Biography, Photo Gallery, Relatives, Events,
    Burial Location, Notable Details, Links)
-6. No Relations tray, search, focus-on-person
+6. No Relations tray + search (**done**, as filters in the People list);
+   focus-on-person still to do after the tree
 7. New Person Questionnaire (wizard)
 8. Views (drag to reorder, save/select)
 9. Free-placement toggle for views

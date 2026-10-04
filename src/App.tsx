@@ -2,9 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import AppHeader from './components/AppHeader.tsx'
 import ConfirmDialog from './components/ConfirmDialog.tsx'
 import PeopleBoard from './components/PeopleBoard.tsx'
+import PeopleList from './components/PeopleList.tsx'
 import PersonForm from './components/PersonForm.tsx'
 import SidePanel from './components/SidePanel.tsx'
 import StartScreen from './components/StartScreen.tsx'
+import { isFiltering, matchPeople, sortPeople, type PeopleSort } from './model/filters.ts'
 import { emptyPerson, fullName } from './model/person.ts'
 import type { Person } from './model/types.ts'
 import { useTree } from './state/treeContext.ts'
@@ -19,6 +21,13 @@ export default function App() {
   const saveForm = useRef<(() => void) | null>(null)
   /** What to do after the "Save changes?" pop-up is answered. */
   const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null)
+
+  // People list (search & filters), shown on the left.
+  const [listOpen, setListOpen] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [filterKeys, setFilterKeys] = useState<string[]>([])
+  const [sort, setSort] = useState<PeopleSort>('name')
 
   const closePanel = useCallback(() => {
     setEditing(null)
@@ -82,12 +91,55 @@ export default function App() {
       action()
     })
 
+  const matches = listOpen ? sortPeople(matchPeople(state.tree, query, filterKeys), sort) : []
+  const highlightIds = listOpen && isFiltering(query, filterKeys) ? new Set(matches.map((p) => p.id)) : null
+
   return (
     <div className="app">
-      <AppHeader onAddPerson={addPerson} beforeFileAction={beforeFileAction} />
-      <main className="canvas">
-        <PeopleBoard selectedId={editing?.person.id ?? null} onSelect={selectPerson} onAdd={addPerson} />
-      </main>
+      <AppHeader
+        onAddPerson={addPerson}
+        beforeFileAction={beforeFileAction}
+        query={query}
+        onQueryChange={(q) => {
+          setQuery(q)
+          if (q.trim()) setListOpen(true)
+        }}
+        filterCount={filterKeys.length}
+        onFilterClick={() => {
+          if (listOpen && filtersOpen) setListOpen(false)
+          else {
+            setListOpen(true)
+            setFiltersOpen(true)
+          }
+        }}
+      />
+      <div className={`workspace${listOpen ? ' with-list' : ''}`}>
+        {listOpen && (
+          <PeopleList
+            people={matches}
+            total={Object.keys(state.tree.people).length}
+            query={query}
+            onQueryChange={setQuery}
+            filterKeys={filterKeys}
+            onFilterKeysChange={setFilterKeys}
+            sort={sort}
+            onSortChange={setSort}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+            selectedId={editing?.person.id ?? null}
+            onSelect={selectPerson}
+            onClose={() => setListOpen(false)}
+          />
+        )}
+        <main className="canvas">
+          <PeopleBoard
+            highlightIds={highlightIds}
+            selectedId={editing?.person.id ?? null}
+            onSelect={selectPerson}
+            onAdd={addPerson}
+          />
+        </main>
+      </div>
       {editing && (
         <SidePanel title={editing.isNew ? 'Add a person' : fullName(editing.person)} onClose={leavePanel}>
           <PersonForm

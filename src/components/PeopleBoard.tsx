@@ -5,6 +5,8 @@ import { useTree } from '../state/treeContext.ts'
 import PersonCard from './PersonCard.tsx'
 
 interface Props {
+  /** When set, people not in it are dimmed (they don't match the search/filters). */
+  highlightIds: Set<string> | null
   selectedId: string | null
   onSelect(id: string): void
   onAdd(): void
@@ -20,7 +22,7 @@ function byBirth(a: Person, b: Person): number {
  * Temporary layout: everyone as a grid of cards, oldest first.
  * The real tree (with connecting lines) replaces this in a later phase.
  */
-export default function PeopleBoard({ selectedId, onSelect, onAdd }: Props) {
+export default function PeopleBoard({ highlightIds, selectedId, onSelect, onAdd }: Props) {
   const { state } = useTree()
   const people = Object.values(state.tree?.people ?? {}).sort(byBirth)
 
@@ -46,6 +48,7 @@ export default function PeopleBoard({ selectedId, onSelect, onAdd }: Props) {
           person={p}
           photo={cardPhoto(p, state.photos)}
           selected={p.id === selectedId}
+          dimmed={highlightIds !== null && !highlightIds.has(p.id)}
           onSelect={() => onSelect(p.id)}
         />
       ))}

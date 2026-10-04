@@ -7,6 +7,7 @@ import {
   checkParentLink,
   checkParentType,
   checkPartnership,
+  childrenNeedingParent,
   ENDED_TYPES,
   findPartnership,
   otherPartner,
@@ -24,7 +25,7 @@ import { relativesOf, type RelativeGroupKey } from '../../model/relatives.ts'
 import type { Family, LifeEvent, ParentType, Partnership, PartnershipType, Person } from '../../model/types.ts'
 import { emptyPerson } from '../../model/person.ts'
 import PersonChip from './PersonChip.tsx'
-import RelativePicker, { type PickedRelative } from './RelativePicker.tsx'
+import RelativePicker, { type PickedRelative, type PickerExtra } from './RelativePicker.tsx'
 
 interface Props {
   /** The person being edited (with any unsaved changes). */
@@ -82,27 +83,94 @@ export default function FamilySection({ person, family, onChange, openPerson, ca
   // ---- Adding relatives ----
 
   const onlyParent = parentLinks.length === 1 ? parentLinks[0].parentId : null
-  const onlyPartner = currentPartners.length === 1 ? currentPartners[0] : null
 
-  function addParent(picked: PickedRelative, alsoPartner: boolean) {
+  /** Link parent → child if the rules allow it (skips quietly otherwise). */
+  const linkIfAllowed = (fam: Family, parentId: string, childId: string) =>
+    checkParentLink(fam, parentId, childId, defaultParentType(childId))
+      ? fam
+      : addParentLink(fam, parentId, childId, defaultParentType(childId))
+
+  /** Keys look like "kind:id"; returns the ids of ticked keys of one kind. */
+  const ticked = (checked: Set<string>, kind: string) =>
+    [...checked].filter((k) => k.startsWith(`${kind}:`)).map((k) => k.slice(kind.length + 1))
+
+  /** Brothers and sisters who share all of my parents and still need another parent. */
+  const fullSiblingsNeedingParent = parentLinks.length
+    ? siblings
+        .map((s) => s.personId)
+        .filter((sib) => {
+          const theirs = parentLinksOf(f, sib).map((l) => l.parentId)
+          return theirs.length < 2 && parentLinks.every((l) => theirs.includes(l.parentId))
+        })
+    : []
+
+  function parentExtras(id: string | null): PickerExtra[] {
+    const extras: PickerExtra[] = []
+    if (onlyParent && onlyParent !== id && !(id && findPartnership(f, onlyParent, id))) {
+      extras.push({ key: 'partner:', label: `Also make them partners of ${name(onlyParent)}`, defaultChecked: true })
+    }
+    for (const sib of fullSiblingsNeedingParent) {
+      if (sib === id || (id && checkParentLink(f, id, sib, defaultParentType(sib)))) continue
+      extras.push({ key: `sib:${sib}`, label: name(sib), defaultChecked: true, group: 'Also a parent of:' })
+    }
+    return extras
+  }
+
+  function addParent(picked: PickedRelative, checked: Set<string>) {
     let [next, id] = resolve(f, picked)
-    const type = defaultParentType(me)
-    next = addParentLink(next, id, me, type)
-    if (alsoPartner && onlyParent && !checkPartnership(next, id, onlyParent)) next = addPartnership(next, onlyParent, id)
+    next = addParentLink(next, id, me, defaultParentType(me))
+    if (checked.has('partner:') && onlyParent && !checkPartnership(next, id, onlyParent)) {
+      next = addPartnership(next, onlyParent, id)
+    }
+    for (const sib of ticked(checked, 'sib')) next = linkIfAllowed(next, id, sib)
     finish(next)
   }
 
-  function addPartner(picked: PickedRelative) {
-    const [next, id] = resolve(f, picked)
-    finish(addPartnership(next, me, id))
+  function partnerExtras(id: string | null): PickerExtra[] {
+    const extras: PickerExtra[] = []
+    // My children who don't have a second parent yet: most likely the new partner's too.
+    for (const c of childrenNeedingParent(f, me)) {
+      if (c === id || (id && checkParentLink(f, id, c, defaultParentType(c)))) continue
+      extras.push({
+        key: `mine:${c}`,
+        label: name(c),
+        defaultChecked: true,
+        group: id ? `Also make ${name(id)} a parent of:` : 'Also make them a parent of:',
+      })
+    }
+    // And the other way round, for someone already in the tree.
+    if (id) {
+      for (const c of childrenNeedingParent(f, id)) {
+        if (c === me || checkParentLink(f, me, c, defaultParentType(c))) continue
+        extras.push({ key: `theirs:${c}`, label: name(c), defaultChecked: true, group: `Also make ${name(me)} a parent of:` })
+      }
+    }
+    return extras
   }
 
-  function addChild(picked: PickedRelative, alsoPartner: boolean) {
+  function addPartner(picked: PickedRelative, checked: Set<string>) {
+    let [next, id] = resolve(f, picked)
+    next = addPartnership(next, me, id)
+    for (const c of ticked(checked, 'mine')) next = linkIfAllowed(next, id, c)
+    for (const c of ticked(checked, 'theirs')) next = linkIfAllowed(next, me, c)
+    finish(next)
+  }
+
+  function childExtras(id: string | null): PickerExtra[] {
+    return currentPartners
+      .filter((p) => p !== id && !(id && checkParentLink(f, p, id, defaultParentType(id))))
+      .map((p) => ({
+        key: `partner:${p}`,
+        label: `${name(p)} is also a parent`,
+        // Tick it when there's only one partner it could be.
+        defaultChecked: currentPartners.length === 1,
+      }))
+  }
+
+  function addChild(picked: PickedRelative, checked: Set<string>) {
     let [next, id] = resolve(f, picked)
     next = addParentLink(next, me, id, defaultParentType(id))
-    if (alsoPartner && onlyPartner && !checkParentLink(next, onlyPartner, id, defaultParentType(id))) {
-      next = addParentLink(next, onlyPartner, id, defaultParentType(id))
-    }
+    for (const p of ticked(checked, 'partner')) next = linkIfAllowed(next, p, id)
     finish(next)
   }
 
@@ -136,11 +204,7 @@ export default function FamilySection({ person, family, onChange, openPerson, ca
             family={f}
             exclude={linked}
             check={(id) => checkParentLink(f, id, me, defaultParentType(me))}
-            extra={
-              onlyParent && !findPartnership(f, onlyParent, me)
-                ? { label: `Also make them partners of ${name(onlyParent)}`, defaultChecked: true }
-                : undefined
-            }
+            extrasFor={parentExtras}
             onPick={addParent}
             onCancel={() => setAdding(null)}
           />
@@ -153,6 +217,7 @@ export default function FamilySection({ person, family, onChange, openPerson, ca
             exclude={linked}
             check={(id) => checkPartnership(f, me, id)}
             defaultGender={person.gender === 'male' ? 'female' : person.gender === 'female' ? 'male' : 'unknown'}
+            extrasFor={partnerExtras}
             onPick={addPartner}
             onCancel={() => setAdding(null)}
           />
@@ -165,7 +230,7 @@ export default function FamilySection({ person, family, onChange, openPerson, ca
             exclude={linked}
             check={(id) => checkParentLink(f, me, id, defaultParentType(id))}
             defaultLastName={person.lastName}
-            extra={onlyPartner ? { label: `${name(onlyPartner)} is also a parent`, defaultChecked: true } : undefined}
+            extrasFor={childExtras}
             onPick={addChild}
             onCancel={() => setAdding(null)}
           />

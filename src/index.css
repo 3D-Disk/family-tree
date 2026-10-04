@@ -151,6 +151,151 @@ select:disabled,
   cursor: not-allowed;
 }
 
+/* Workspace: optional People list on the left, cards in the middle */
+
+.workspace {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.badge {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 0.75rem;
+  line-height: 18px;
+  text-align: center;
+}
+
+.people-list {
+  flex: none;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+
+.people-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px 6px 16px;
+}
+
+.people-list-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.people-list-controls {
+  padding: 0 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.people-list-query {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.filters-toggle {
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.filters {
+  padding: 2px 0 6px;
+}
+
+.filters .checkbox {
+  display: flex;
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+.people-list-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.sort-select {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sort-select select {
+  padding: 3px 6px;
+  font-size: 0.82rem;
+}
+
+.people-list-results {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+}
+
+.people-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.people-row:hover {
+  background: var(--bg);
+}
+
+.people-row.selected {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border-color: var(--accent);
+}
+
+.people-row-reasons {
+  font-size: 0.75rem;
+  color: var(--warn-text);
+}
+
+.people-list-empty {
+  padding: 16px 8px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.person-card.dimmed {
+  opacity: 0.3;
+}
+
 /* Canvas */
 
 .canvas {
@@ -758,9 +903,36 @@ select:focus {
   margin: 4px 0 8px;
 }
 
+.picker-extras {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.picker-extras-group {
+  margin: 6px 0 2px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 .picker-extra {
-  margin: 10px 0 0;
+  margin: 4px 0 0;
   font-size: 0.88rem;
+}
+
+.picker-extra.grouped {
+  margin-left: 4px;
+}
+
+.picker-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.picker-add {
+  margin-top: 12px;
 }
 
 .picker-error {
@@ -963,6 +1135,15 @@ select:focus {
 }
 
 @media (max-width: 640px) {
+  /* On phones the People list covers the cards; a person's panel slides over it. */
+  .people-list {
+    position: absolute;
+    inset: 0;
+    z-index: 15;
+    width: 100%;
+    border-right: 0;
+  }
+
   .form-row {
     grid-template-columns: 1fr;
   }

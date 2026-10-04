@@ -2,15 +2,18 @@ import { useRef } from 'react'
 import { useTree } from '../state/treeContext.ts'
 import { canSaveInPlace } from '../storage/fileAccess.ts'
 
-const COMING_SOON = 'Coming in a later phase'
-
 interface Props {
   onAddPerson(): void
+  query: string
+  onQueryChange(q: string): void
+  /** Number of filters ticked, shown on the Filter button. */
+  filterCount: number
+  onFilterClick(): void
   /** Runs a file action once any unsaved edits in the side panel are dealt with. */
   beforeFileAction(action: () => void): void
 }
 
-export default function AppHeader({ onAddPerson, beforeFileAction }: Props) {
+export default function AppHeader({ onAddPerson, beforeFileAction, query, onQueryChange, filterCount, onFilterClick }: Props) {
   const { state, dispatch, save, saveAs, openFile, close, confirmDiscard } = useTree()
   const menu = useRef<HTMLDetailsElement>(null)
   const tree = state.tree!
@@ -72,9 +75,12 @@ export default function AppHeader({ onAddPerson, beforeFileAction }: Props) {
           type="search"
           placeholder="Search people…"
           aria-label="Search people"
-          disabled
-          title={COMING_SOON}
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
         />
+        <button type="button" className="btn filter-btn" onClick={onFilterClick} title="Filter people (e.g. no birth date)">
+          Filter{filterCount > 0 && <span className="badge">{filterCount}</span>}
+        </button>
 
         <button type="button" className="btn btn-primary" onClick={onAddPerson}>
           + Add person

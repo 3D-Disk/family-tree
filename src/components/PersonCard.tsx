@@ -6,17 +6,18 @@ interface Props {
   person: Person
   photo: Blob | undefined
   selected: boolean
+  dimmed?: boolean
   onSelect(): void
 }
 
 /** A tree card (node) for one person. The whole card is clickable. */
-export default function PersonCard({ person, photo, selected, onSelect }: Props) {
+export default function PersonCard({ person, photo, selected, dimmed, onSelect }: Props) {
   const name = cardName(person)
   const span = lifeSpan(person)
   return (
     <button
       type="button"
-      className={`person-card gender-${person.gender}${selected ? ' selected' : ''}${person.living ? '' : ' deceased'}`}
+      className={`person-card gender-${person.gender}${selected ? ' selected' : ''}${person.living ? '' : ' deceased'}${dimmed ? ' dimmed' : ''}`}
       onClick={onSelect}
       aria-pressed={selected}
     >

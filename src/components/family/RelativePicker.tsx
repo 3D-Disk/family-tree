@@ -6,6 +6,15 @@ import PersonChip from './PersonChip.tsx'
 
 export type PickedRelative = { kind: 'existing'; id: string } | { kind: 'new'; person: Person }
 
+/** An optional tick-box offered with the pick, e.g. "Also a parent of: ☑ Ann". */
+export interface PickerExtra {
+  key: string
+  label: string
+  defaultChecked: boolean
+  /** Heading shown above a set of related tick-boxes. */
+  group?: string
+}
+
 interface Props {
   title: string
   family: Family
@@ -17,20 +26,27 @@ interface Props {
   defaultGender?: Gender
   /** Last name to pre-fill for a new person (e.g. a child's). */
   defaultLastName?: string
-  /** Optional extra choice, e.g. "Also make them partners of Ann". */
-  extra?: { label: string; defaultChecked: boolean }
+  /** Extra tick-boxes for the chosen person (`null` while creating a new person). */
+  extrasFor?(id: string | null): PickerExtra[]
   note?: string
-  onPick(picked: PickedRelative, extraChecked: boolean): void
+  /** `checked` holds the keys of the ticked extras. */
+  onPick(picked: PickedRelative, checked: Set<string>): void
   onCancel(): void
 }
 
 const SHOW_MAX = 8
 
 export default function RelativePicker(props: Props) {
-  const { title, family, exclude, check, extra, note, onPick, onCancel } = props
+  const { title, family, exclude, check, extrasFor, note, onPick, onCancel } = props
   const [mode, setMode] = useState<'existing' | 'new'>('existing')
   const [query, setQuery] = useState('')
-  const [extraChecked, setExtraChecked] = useState(extra?.defaultChecked ?? false)
+  /** An existing person waiting for the extras to be confirmed. */
+  const [selected, setSelected] = useState<string | null>(null)
+  const extras = mode === 'new' ? (extrasFor?.(null) ?? []) : selected ? (extrasFor?.(selected) ?? []) : []
+  /** Ticks the user changed from the default, by key. */
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({})
+  const isChecked = (x: PickerExtra) => overrides[x.key] ?? x.defaultChecked
+  const checkedKeys = () => new Set(extras.filter(isChecked).map((x) => x.key))
   const [first, setFirst] = useState('')
   const [last, setLast] = useState(props.defaultLastName ?? '')
   const [gender, setGender] = useState<Gender>(props.defaultGender ?? 'unknown')
@@ -43,8 +59,23 @@ export default function RelativePicker(props: Props) {
 
   function pickExisting(id: string) {
     const problem = check(id)
-    if (problem) setError(problem)
-    else onPick({ kind: 'existing', id }, extraChecked)
+    if (problem) {
+      setError(problem)
+      return
+    }
+    // Pick straight away unless there are tick-boxes to confirm first.
+    if ((extrasFor?.(id) ?? []).length === 0) onPick({ kind: 'existing', id }, new Set())
+    else {
+      setSelected(id)
+      setOverrides({})
+    }
+  }
+
+  const switchMode = (m: 'existing' | 'new') => {
+    setMode(m)
+    setSelected(null)
+    setOverrides({})
+    setError(null)
   }
 
   function createNew(e: SyntheticEvent) {
@@ -53,7 +84,7 @@ export default function RelativePicker(props: Props) {
       setError('Enter at least a first or last name.')
       return
     }
-    onPick({ kind: 'new', person: { ...emptyPerson(), firstName: first.trim(), lastName: last.trim(), gender } }, extraChecked)
+    onPick({ kind: 'new', person: { ...emptyPerson(), firstName: first.trim(), lastName: last.trim(), gender } }, checkedKeys())
   }
 
   return (
@@ -78,15 +109,22 @@ export default function RelativePicker(props: Props) {
       {note && <p className="picker-note">{note}</p>}
 
       <div className="picker-tabs" role="tablist">
-        <button type="button" role="tab" aria-selected={mode === 'existing'} onClick={() => { setMode('existing'); setError(null) }}>
+        <button type="button" role="tab" aria-selected={mode === 'existing'} onClick={() => switchMode('existing')}>
           Someone in the tree
         </button>
-        <button type="button" role="tab" aria-selected={mode === 'new'} onClick={() => { setMode('new'); setError(null) }}>
+        <button type="button" role="tab" aria-selected={mode === 'new'} onClick={() => switchMode('new')}>
           New person
         </button>
       </div>
 
-      {mode === 'existing' ? (
+      {mode === 'existing' && selected ? (
+        <div className="picker-selected">
+          <PersonChip person={family.people[selected]} />
+          <button type="button" className="link-btn" onClick={() => setSelected(null)}>
+            Choose someone else
+          </button>
+        </div>
+      ) : mode === 'existing' ? (
         <div>
           <input
             className="picker-search"
@@ -100,7 +138,7 @@ export default function RelativePicker(props: Props) {
           {candidates.length === 0 ? (
             <p className="picker-empty">
               {q ? 'No one matches that name.' : 'No one else to choose yet.'}{' '}
-              <button type="button" className="link-btn" onClick={() => setMode('new')}>
+              <button type="button" className="link-btn" onClick={() => switchMode('new')}>
                 Create a new person
               </button>
             </p>
@@ -138,17 +176,35 @@ export default function RelativePicker(props: Props) {
             ))}
           </div>
           <p className="field-hint">You can add their other details later by opening them.</p>
-          <button type="button" className="btn btn-primary" onClick={createNew}>
-            Add
-          </button>
         </div>
       )}
 
-      {extra && (
-        <label className="checkbox picker-extra">
-          <input type="checkbox" checked={extraChecked} onChange={(e) => setExtraChecked(e.target.checked)} />
-          {extra.label}
-        </label>
+      {extras.length > 0 && (
+        <div className="picker-extras">
+          {extras.map((x, i) => (
+            <div key={x.key}>
+              {x.group && x.group !== extras[i - 1]?.group && <div className="picker-extras-group">{x.group}</div>}
+              <label className={`checkbox picker-extra${x.group ? ' grouped' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={isChecked(x)}
+                  onChange={(e) => setOverrides((o) => ({ ...o, [x.key]: e.target.checked }))}
+                />
+                {x.label}
+              </label>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {(mode === 'new' || selected) && (
+        <button
+          type="button"
+          className="btn btn-primary picker-add"
+          onClick={(e) => (selected && mode === 'existing' ? onPick({ kind: 'existing', id: selected }, checkedKeys()) : createNew(e))}
+        >
+          Add
+        </button>
       )}
       {error && (
         <p className="picker-error" role="alert">
