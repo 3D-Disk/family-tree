@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { dateSortKey } from '../../model/dates.ts'
 import { fullName } from '../../model/person.ts'
 import {
@@ -38,9 +38,12 @@ interface Props {
   /** Only people already saved in the tree can be opened. */
   canOpen(id: string): boolean
   onError(message: string): void
+  /** Open the "add" box for this kind of relative (e.g. from a tree card's "+ Parent"). */
+  addRequest?: { kind: AddKind; n: number }
 }
 
-type Adding = 'parent' | 'partner' | 'child' | 'sibling' | null
+export type AddKind = 'parent' | 'partner' | 'child' | 'sibling'
+type Adding = AddKind | null
 
 const CURRENT_PARTNER: PartnershipType[] = ['married', 'engaged', 'partner']
 const IMMEDIATE: RelativeGroupKey[] = ['partners', 'parents', 'children', 'siblings']
@@ -48,8 +51,20 @@ const IMMEDIATE: RelativeGroupKey[] = ['partners', 'parents', 'children', 'sibli
 const byBirth = (f: Family) => (a: string, b: string) =>
   (dateSortKey(f.people[a]?.birth.date ?? '') ?? Infinity) - (dateSortKey(f.people[b]?.birth.date ?? '') ?? Infinity)
 
-export default function FamilySection({ person, family, onChange, openPerson, canOpen, onError }: Props) {
-  const [adding, setAdding] = useState<Adding>(null)
+export default function FamilySection({ person, family, onChange, openPerson, canOpen, onError, addRequest }: Props) {
+  const [adding, setAdding] = useState<Adding>(addRequest?.kind ?? null)
+  const root = useRef<HTMLDivElement>(null)
+
+  // A new request (from the tree) opens that box and scrolls to it.
+  const lastRequest = useRef<number | null>(null)
+  useEffect(() => {
+    if (!addRequest || addRequest.n === lastRequest.current) return
+    lastRequest.current = addRequest.n
+    setAdding(addRequest.kind)
+    requestAnimationFrame(() =>
+      root.current?.querySelector('.relative-picker')?.scrollIntoView({ block: 'center', behavior: 'smooth' }),
+    )
+  }, [addRequest])
   const me = person.id
   const f = family
   const name = (id: string) => fullName(f.people[id])
@@ -278,7 +293,7 @@ export default function FamilySection({ person, family, onChange, openPerson, ca
     )
 
   return (
-    <div className="family">
+    <div className="family" ref={root}>
       <div className="family-group">
         <h3>Parents</h3>
         {parentLinks.map((l) => (

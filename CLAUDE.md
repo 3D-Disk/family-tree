@@ -35,8 +35,8 @@ screen). Single user for now; sharing/accounts are a future phase.
 ## Tech
 - React + TypeScript + Vite; static site deployed to GitHub Pages from `main`
   via `.github/workflows/deploy.yml`. `base: './'` in `vite.config.ts`.
-- Dexie (IndexedDB auto-save), JSZip (save file). Planned: React Flow
-  (`@xyflow/react`) for the tree canvas.
+- Dexie (IndexedDB auto-save), JSZip (save file), React Flow (`@xyflow/react`)
+  for the tree canvas (pan/zoom/minimap only; cards aren't draggable yet).
 - Folders:
   - `src/model/`: types, date parsing (`dates.ts`), person helpers,
     `relationships.ts` (lookups, rules like "no loops / max 2 biological
@@ -50,7 +50,16 @@ screen). Single user for now; sharing/accounts are a future phase.
   - `src/storage/`: `fileFormat.ts` (.familytree zip, versioned; add defaults
     for new fields in `readTreeFile` so old files keep opening),
     `fileAccess.ts` (pickers/download), `autosave.ts` (Dexie), `images.ts`
-  - `src/components/`: UI. `PeopleBoard` is a temporary grid until the tree view.
+  - `src/layout/familyLayout.ts`: pure Default-view layout (generations →
+    partner "chains" per row → sibling groups ordered under parents via
+    barycentre sweeps → x positions by alternating least-squares passes
+    (`isotonicPlace`) → lines). Returns card positions + line polylines.
+    Views (Phase 8) should feed overrides into this, not replace it.
+  - `src/components/tree/`: `TreeView` renders the layout with React Flow
+    (cards = nodes, all lines = one SVG node behind them); `TreeCard` has the
+    hover "+ Parent/Partner/Child/Sibling" buttons, which open the person's
+    panel with that Family picker already open (`addRequest`).
+  - `src/components/`: other UI.
     `ConfirmDialog` is the shared pop-up (use it instead of `window.confirm` for
     new prompts). `PhotoAdjuster` frames profile photos.
 - Profile photos: the original (≤1600px) is `photoId`; the framing is
@@ -67,7 +76,6 @@ screen). Single user for now; sharing/accounts are a future phase.
   person is edited in the side panel (right). Non-matching cards are dimmed.
 - The side panel form reports unsaved edits to `App.tsx`; every way of leaving
   the form goes through `requestLeave()` so the "Save changes?" pop-up shows.
-  - Planned: `src/layout/` for tree layout.
 - End-to-end checks are run ad hoc with Playwright against `npm run preview`.
 
 ## Commands
@@ -82,7 +90,7 @@ Run lint, test and build before every push.
 1. Foundation (shell, deploy). **Done.**
 2. People + saving (form, photos, placeholders, .familytree save/open, auto-save recovery). **Done.**
 3. Relationships + derived relatives. **Done.**
-4. Tree visualization (Default view)
+4. Tree visualization (Default view). **Done.**
 5. Details side panel (Summary, Biography, Photo Gallery, Relatives, Events,
    Burial Location, Notable Details, Links)
 6. No Relations tray + search (**done**, as filters in the People list);

@@ -8,7 +8,7 @@ import type { PhotoUpdate } from '../state/treeReducer.ts'
 import { preparePhoto, renderAvatar } from '../storage/images.ts'
 import Avatar from './Avatar.tsx'
 import ConfirmDialog from './ConfirmDialog.tsx'
-import FamilySection from './family/FamilySection.tsx'
+import FamilySection, { type AddKind } from './family/FamilySection.tsx'
 import PhotoAdjuster from './PhotoAdjuster.tsx'
 
 interface Props {
@@ -24,6 +24,8 @@ interface Props {
   saveRef: RefObject<(() => void) | null>
   /** Open another (already saved) person. */
   onOpenPerson(id: string): void
+  /** Open the Family "add" box for this kind of relative. */
+  addRequest?: { kind: AddKind; n: number }
 }
 
 /** undefined = photo unchanged, null = photo removed. */
@@ -56,7 +58,7 @@ const GENDERS: { value: Gender; label: string }[] = [
   { value: 'unknown', label: 'Unknown' },
 ]
 
-export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyChange, saveRef, onOpenPerson }: Props) {
+export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyChange, saveRef, onOpenPerson, addRequest }: Props) {
   const { state, dispatch, notify } = useTree()
   const [draft, setDraft] = useState(person)
   const tree = state.tree!
@@ -227,6 +229,7 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
           openPerson={onOpenPerson}
           canOpen={(id) => id in tree.people && id !== person.id}
           onError={(m) => notify(m, 'error')}
+          addRequest={addRequest}
         />
       </fieldset>
 

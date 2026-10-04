@@ -23,6 +23,8 @@ export interface TreeState {
   dirty: boolean
   /** Increases on every edit, so a save that finishes late can tell if it's stale. */
   revision: number
+  /** Increases each time a different tree is started or opened. */
+  opened: number
 }
 
 export const initialState: TreeState = {
@@ -32,6 +34,7 @@ export const initialState: TreeState = {
   fileHandle: null,
   dirty: false,
   revision: 0,
+  opened: 0,
 }
 
 export type TreeAction =
@@ -77,6 +80,7 @@ function reduce(state: TreeState, action: TreeAction): TreeState {
         tree: { name: action.name, people: {}, parentLinks: {}, partnerships: {} },
         dirty: true,
         revision: state.revision,
+        opened: state.opened + 1,
       }
 
     case 'load':
@@ -87,10 +91,11 @@ function reduce(state: TreeState, action: TreeAction): TreeState {
         fileHandle: action.fileHandle,
         dirty: action.dirty,
         revision: state.revision,
+        opened: state.opened + 1,
       }
 
     case 'close':
-      return { ...initialState, revision: state.revision }
+      return { ...initialState, revision: state.revision, opened: state.opened }
 
     case 'renameTree':
       if (!state.tree) return state
