@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { loadAutosave, writeAutosave } from '../storage/autosave.ts'
 import { pickTreeFile, saveTreeFile } from '../storage/fileAccess.ts'
-import { readTreeFile, TreeFileError, writeTreeFile } from '../storage/fileFormat.ts'
+import { normalizeTree, readTreeFile, TreeFileError, writeTreeFile } from '../storage/fileFormat.ts'
 import { TreeContext, type TreeApi } from './treeContext.ts'
 import { initialState, treeReducer } from './treeReducer.ts'
 
@@ -106,7 +106,7 @@ export default function TreeProvider({ children }: { children: ReactNode }) {
           return
         }
         const { session, photos } = saved
-        dispatch({ type: 'load', tree: session.tree, photos, fileName: session.fileName, fileHandle: session.fileHandle, dirty: session.dirty })
+        dispatch({ type: 'load', tree: normalizeTree(session.tree), photos, fileName: session.fileName, fileHandle: session.fileHandle, dirty: session.dirty })
       },
       save: () => doSave(false),
       saveAs: () => doSave(true),

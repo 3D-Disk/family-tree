@@ -24,6 +24,10 @@ Safari and Firefox download a new, dated copy each time you save instead.
 - **Click a card** to edit that person, or delete them.
 - **Save** (or Ctrl+S / ⌘S) whenever you like. "● Unsaved changes" at the top
   means there is work not yet in your file.
+- **Family:** in a person's panel, add parents, partners, children and brothers
+  or sisters, either picking someone already in the tree or creating them on
+  the spot. Grandparents, aunts and uncles, cousins, in-laws and
+  step-relatives are worked out automatically under "Other relatives".
 - Click the tree's name at the top left to rename it.
 
 ## Status

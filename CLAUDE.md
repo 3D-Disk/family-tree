@@ -38,7 +38,10 @@ screen). Single user for now; sharing/accounts are a future phase.
 - Dexie (IndexedDB auto-save), JSZip (save file). Planned: React Flow
   (`@xyflow/react`) for the tree canvas.
 - Folders:
-  - `src/model/`: types, date parsing (`dates.ts`), person helpers
+  - `src/model/`: types, date parsing (`dates.ts`), person helpers,
+    `relationships.ts` (lookups, rules like "no loops / max 2 biological
+    parents", and pure edit functions), `relatives.ts` (derived relatives with
+    gendered labels). `testFamily.ts` builds made-up families for tests.
   - `src/state/`: `treeReducer.ts` (all edits go through it; bumps `revision`
     and sets `dirty`), `TreeProvider.tsx` (save/open/auto-save/notices),
     `useTree()` hook in `treeContext.ts`
@@ -52,6 +55,10 @@ screen). Single user for now; sharing/accounts are a future phase.
   `photoCrop` (`src/model/photoCrop.ts`); a 256px framed square is `avatarId`
   and is what cards show (`cardPhoto()`). Keep all three in sync via the
   reducer's `PhotoUpdate`.
+- Family links are edited in `components/family/FamilySection.tsx` inside the
+  person form, on a draft copy of the family; `savePerson` with `family`
+  commits the person and links together. Adding a sibling to someone with no
+  parents creates an "Unknown parent" person to connect them.
 - The side panel form reports unsaved edits to `App.tsx`; every way of leaving
   the form goes through `requestLeave()` so the "Save changes?" pop-up shows.
   - Planned: `src/layout/` for tree layout.
@@ -68,7 +75,7 @@ Run lint, test and build before every push.
 ## Roadmap
 1. Foundation (shell, deploy). **Done.**
 2. People + saving (form, photos, placeholders, .familytree save/open, auto-save recovery). **Done.**
-3. Relationships + derived relatives
+3. Relationships + derived relatives. **Done.**
 4. Tree visualization (Default view)
 5. Details side panel (Summary, Biography, Photo Gallery, Relatives, Events,
    Burial Location, Notable Details, Links)
