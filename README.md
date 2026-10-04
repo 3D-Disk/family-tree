@@ -28,6 +28,10 @@ Safari and Firefox download a new, dated copy each time you save instead.
   or sisters, either picking someone already in the tree or creating them on
   the spot. Grandparents, aunts and uncles, cousins, in-laws and
   step-relatives are worked out automatically under "Other relatives".
+- **Search & Filter:** type in Search, or click **Filter**, to open the People
+  list on the left. Tick filters such as "No birth date" or "No relations" to
+  find people with missing details. Click a name to open them on the right;
+  the list stays put so you can work through it.
 - Click the tree's name at the top left to rename it.
 
 ## Status

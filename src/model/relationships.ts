@@ -60,6 +60,11 @@ export function findPartnership(f: Family, a: string, b: string): Partnership | 
   return partnershipsOf(f, a).find((p) => otherPartner(p, a) === b)
 }
 
+/** Children of this person who have fewer than two parents recorded. */
+export function childrenNeedingParent(f: Family, personId: string): string[] {
+  return childIds(f, personId).filter((c) => parentLinksOf(f, c).length < 2)
+}
+
 /** True if `ancestorId` is a parent, grandparent, … of `personId`. */
 export function isAncestor(f: Family, ancestorId: string, personId: string): boolean {
   const seen = new Set<string>()
