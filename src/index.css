@@ -549,6 +549,7 @@ kbd {
 }
 
 .tree-card-dates {
+  margin-top: 5px;
   font-size: 0.78rem;
   color: var(--text-muted);
 }
