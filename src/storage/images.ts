@@ -1,3 +1,5 @@
+import { frameScale, type PhotoCrop } from '../model/photoCrop.ts'
+
 // Shrink photos on upload so save files and browser storage stay small.
 
 const MAX_SIDE = 1600
@@ -23,5 +25,28 @@ export async function preparePhoto(file: File): Promise<Blob> {
   bitmap.close()
   return new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not process the image.'))), 'image/jpeg', QUALITY),
+  )
+}
+
+const AVATAR_SIZE = 256
+
+/** Draw the framed part of a photo into the small square image shown on cards. */
+export async function renderAvatar(photo: Blob, crop: PhotoCrop): Promise<Blob> {
+  const bitmap = await createImageBitmap(photo)
+  const n = AVATAR_SIZE
+  const canvas = document.createElement('canvas')
+  canvas.width = n
+  canvas.height = n
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, n, n)
+  const s = frameScale(bitmap.width, bitmap.height, crop) * n
+  ctx.translate(n / 2 + crop.x * n, n / 2 + crop.y * n)
+  ctx.rotate((crop.rotation * Math.PI) / 180)
+  ctx.scale(s, s)
+  ctx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2)
+  bitmap.close()
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not process the image.'))), 'image/jpeg', 0.9),
   )
 }

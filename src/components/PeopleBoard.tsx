@@ -1,4 +1,5 @@
 import { dateSortKey } from '../model/dates.ts'
+import { cardPhoto } from '../model/person.ts'
 import type { Person } from '../model/types.ts'
 import { useTree } from '../state/treeContext.ts'
 import PersonCard from './PersonCard.tsx'
@@ -43,7 +44,7 @@ export default function PeopleBoard({ selectedId, onSelect, onAdd }: Props) {
         <PersonCard
           key={p.id}
           person={p}
-          photo={p.photoId ? state.photos[p.photoId] : undefined}
+          photo={cardPhoto(p, state.photos)}
           selected={p.id === selectedId}
           onSelect={() => onSelect(p.id)}
         />

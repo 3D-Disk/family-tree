@@ -46,6 +46,14 @@ screen). Single user for now; sharing/accounts are a future phase.
     for new fields in `readTreeFile` so old files keep opening),
     `fileAccess.ts` (pickers/download), `autosave.ts` (Dexie), `images.ts`
   - `src/components/`: UI. `PeopleBoard` is a temporary grid until the tree view.
+    `ConfirmDialog` is the shared pop-up (use it instead of `window.confirm` for
+    new prompts). `PhotoAdjuster` frames profile photos.
+- Profile photos: the original (≤1600px) is `photoId`; the framing is
+  `photoCrop` (`src/model/photoCrop.ts`); a 256px framed square is `avatarId`
+  and is what cards show (`cardPhoto()`). Keep all three in sync via the
+  reducer's `PhotoUpdate`.
+- The side panel form reports unsaved edits to `App.tsx`; every way of leaving
+  the form goes through `requestLeave()` so the "Save changes?" pop-up shows.
   - Planned: `src/layout/` for tree layout.
 - End-to-end checks are run ad hoc with Playwright against `npm run preview`.
 

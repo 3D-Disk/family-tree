@@ -4,7 +4,13 @@ import { canSaveInPlace } from '../storage/fileAccess.ts'
 
 const COMING_SOON = 'Coming in a later phase'
 
-export default function AppHeader({ onAddPerson }: { onAddPerson(): void }) {
+interface Props {
+  onAddPerson(): void
+  /** Runs a file action once any unsaved edits in the side panel are dealt with. */
+  beforeFileAction(action: () => void): void
+}
+
+export default function AppHeader({ onAddPerson, beforeFileAction }: Props) {
   const { state, dispatch, save, saveAs, openFile, close, confirmDiscard } = useTree()
   const menu = useRef<HTMLDetailsElement>(null)
   const tree = state.tree!
@@ -41,10 +47,10 @@ export default function AppHeader({ onAddPerson }: { onAddPerson(): void }) {
             <button type="button" role="menuitem" onClick={run(saveAs)}>
               {canSaveInPlace ? 'Save as…' : 'Download a copy'}
             </button>
-            <button type="button" role="menuitem" onClick={run(() => confirmDiscard() && openFile())}>
+            <button type="button" role="menuitem" onClick={run(() => beforeFileAction(() => confirmDiscard() && openFile()))}>
               Open file…
             </button>
-            <button type="button" role="menuitem" onClick={run(() => confirmDiscard() && close())}>
+            <button type="button" role="menuitem" onClick={run(() => beforeFileAction(() => confirmDiscard() && close()))}>
               Close tree
             </button>
           </div>

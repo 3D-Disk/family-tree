@@ -22,7 +22,7 @@ describe('.familytree files', () => {
     const zip = new JSZip()
     zip.file('tree.json', JSON.stringify({ format: 'familytree', version: 1, tree: { name: 'Old', people: { x: { firstName: 'Bo' } } } }))
     const loaded = await readTreeFile(await zip.generateAsync({ type: 'blob' }))
-    expect(loaded.tree.people.x).toMatchObject({ id: 'x', firstName: 'Bo', gender: 'unknown', living: true })
+    expect(loaded.tree.people.x).toMatchObject({ id: 'x', firstName: 'Bo', gender: 'unknown', living: true, photoCrop: null, avatarId: null })
   })
 
   it('rejects files that are not family trees', async () => {

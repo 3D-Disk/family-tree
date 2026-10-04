@@ -1,18 +1,41 @@
-import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react'
 import { formatDate, parseDate } from '../model/dates.ts'
-import { fullName, newId } from '../model/person.ts'
+import { cardPhoto, fullName, newId } from '../model/person.ts'
+import { DEFAULT_CROP, type PhotoCrop } from '../model/photoCrop.ts'
 import type { Gender, LifeEvent, Person } from '../model/types.ts'
 import { useTree } from '../state/treeContext.ts'
-import { preparePhoto } from '../storage/images.ts'
+import type { PhotoUpdate } from '../state/treeReducer.ts'
+import { preparePhoto, renderAvatar } from '../storage/images.ts'
 import Avatar from './Avatar.tsx'
+import ConfirmDialog from './ConfirmDialog.tsx'
+import PhotoAdjuster from './PhotoAdjuster.tsx'
 
 interface Props {
   person: Person
   isNew: boolean
+  /** Called after the person is saved or deleted. */
   onDone(): void
+  /** Called when the user presses Cancel (the parent asks about unsaved edits). */
+  onCancel(): void
+  /** Tells the parent whether the form has edits that aren't saved yet. */
+  onDirtyChange(dirty: boolean): void
+  /** Lets the parent save the form (from the "Save changes?" pop-up). */
+  saveRef: RefObject<(() => void) | null>
 }
 
-type PhotoChange = { id: string; blob: Blob } | null | undefined
+/** undefined = photo unchanged, null = photo removed. */
+type PhotoChange = PhotoUpdate | null | undefined
+
+interface Adjusting {
+  blob: Blob
+  crop: PhotoCrop
+  /** Id to keep for the original photo; absent for a newly chosen photo. */
+  id?: string
+}
+
+function sameFields(a: Person, b: Person): boolean {
+  return JSON.stringify({ ...a, updatedAt: '' }) === JSON.stringify({ ...b, updatedAt: '' })
+}
 
 const GENDERS: { value: Gender; label: string }[] = [
   { value: 'male', label: 'Male' },
@@ -21,24 +44,37 @@ const GENDERS: { value: Gender; label: string }[] = [
   { value: 'unknown', label: 'Unknown' },
 ]
 
-export default function PersonForm({ person, isNew, onDone }: Props) {
+export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyChange, saveRef }: Props) {
   const { state, dispatch, notify } = useTree()
   const [draft, setDraft] = useState(person)
   const [photo, setPhoto] = useState<PhotoChange>(undefined)
   const [photoBusy, setPhotoBusy] = useState(false)
+  const [adjusting, setAdjusting] = useState<Adjusting | null>(null)
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+
+  const dirty = photo !== undefined || !sameFields(draft, person)
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange])
+
+  function commit() {
+    dispatch({ type: 'savePerson', person: draft, photo })
+    notify(`${isNew ? 'Added' : 'Updated'} ${fullName(draft)}`)
+  }
+  useEffect(() => {
+    saveRef.current = commit
+  })
 
   const set = <K extends keyof Person>(key: K, value: Person[K]) => setDraft((d) => ({ ...d, [key]: value }))
   const setEvent = (key: 'birth' | 'death', part: keyof LifeEvent, value: string) =>
     setDraft((d) => ({ ...d, [key]: { ...d[key], [part]: value } }))
 
-  const shownPhoto = photo === undefined ? (draft.photoId ? state.photos[draft.photoId] : undefined) : photo?.blob
+  const shownPhoto = photo === undefined ? cardPhoto(draft, state.photos) : photo?.avatarBlob
 
   async function onPhotoChosen(file: File | undefined) {
     if (!file) return
     setPhotoBusy(true)
     try {
-      setPhoto({ id: newId(), blob: await preparePhoto(file) })
+      setAdjusting({ blob: await preparePhoto(file), crop: DEFAULT_CROP })
     } catch (e) {
       notify(e instanceof Error ? e.message : 'Could not use that photo.', 'error')
     } finally {
@@ -47,10 +83,30 @@ export default function PersonForm({ person, isNew, onDone }: Props) {
     }
   }
 
+  function adjustExisting() {
+    if (photo) setAdjusting({ blob: photo.blob, crop: photo.crop, id: photo.id })
+    else if (photo === undefined && draft.photoId && state.photos[draft.photoId]) {
+      setAdjusting({ blob: state.photos[draft.photoId], crop: draft.photoCrop ?? DEFAULT_CROP, id: draft.photoId })
+    }
+  }
+
+  async function onAdjusted(crop: PhotoCrop) {
+    const current = adjusting!
+    setAdjusting(null)
+    setPhotoBusy(true)
+    try {
+      const avatarBlob = await renderAvatar(current.blob, crop)
+      setPhoto({ id: current.id ?? newId(), blob: current.blob, avatarId: newId(), avatarBlob, crop })
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'Could not use that photo.', 'error')
+    } finally {
+      setPhotoBusy(false)
+    }
+  }
+
   function onSubmit(e: FormEvent) {
     e.preventDefault()
-    dispatch({ type: 'savePerson', person: draft, photo })
-    notify(`${isNew ? 'Added' : 'Updated'} ${fullName(draft)}`)
+    commit()
     onDone()
   }
 
@@ -70,9 +126,14 @@ export default function PersonForm({ person, isNew, onDone }: Props) {
             {photoBusy ? 'Processing…' : shownPhoto ? 'Change photo' : 'Add photo'}
           </button>
           {shownPhoto && (
-            <button type="button" className="btn btn-quiet" onClick={() => setPhoto(null)}>
-              Remove photo
-            </button>
+            <>
+              <button type="button" className="btn" onClick={adjustExisting} disabled={photoBusy}>
+                Adjust photo
+              </button>
+              <button type="button" className="btn btn-danger" onClick={() => setConfirmRemove(true)} disabled={photoBusy}>
+                Remove photo
+              </button>
+            </>
           )}
           <input
             ref={fileInput}
@@ -156,13 +217,39 @@ export default function PersonForm({ person, isNew, onDone }: Props) {
           </button>
         )}
         <span className="spacer" />
-        <button type="button" className="btn" onClick={onDone}>
+        <button type="button" className="btn" onClick={onCancel}>
           Cancel
         </button>
         <button type="submit" className="btn btn-primary" disabled={photoBusy}>
           {isNew ? 'Add person' : 'Save changes'}
         </button>
       </div>
+
+      {adjusting && (
+        <PhotoAdjuster
+          photo={adjusting.blob}
+          initialCrop={adjusting.crop}
+          onDone={onAdjusted}
+          onCancel={() => setAdjusting(null)}
+        />
+      )}
+
+      {confirmRemove && (
+        <ConfirmDialog
+          title="Remove this photo?"
+          buttons={[
+            { label: 'Cancel', value: false },
+            { label: 'Remove photo', value: true, kind: 'danger' },
+          ]}
+          cancelValue={false}
+          onChoose={(remove) => {
+            setConfirmRemove(false)
+            if (remove) setPhoto(null)
+          }}
+        >
+          The photo will be removed from {fullName(draft)} when you save.
+        </ConfirmDialog>
+      )}
     </form>
   )
 }

@@ -11,7 +11,13 @@ export default function SidePanel({ title, onClose, children }: Props) {
   const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const onKey = (e: KeyboardEvent) => {
+      // A pop-up on top handles Esc itself.
+      if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('dialog[open]')) return
+      // Stop this same key press from also dismissing a pop-up that onClose opens.
+      e.preventDefault()
+      onClose()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])

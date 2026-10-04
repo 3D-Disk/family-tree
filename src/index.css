@@ -135,6 +135,7 @@ select,
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .btn-primary {
@@ -552,6 +553,111 @@ select:focus {
 
 .spacer {
   flex: 1;
+}
+
+/* Pop-ups */
+
+.confirm-dialog,
+.photo-adjuster {
+  width: min(420px, calc(100vw - 32px));
+  padding: 20px 22px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.25);
+}
+
+.confirm-dialog::backdrop,
+.photo-adjuster::backdrop {
+  background: rgb(43 38 32 / 0.45);
+}
+
+.confirm-dialog h2,
+.photo-adjuster h2 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+}
+
+.confirm-dialog-body {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.confirm-dialog-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/* Photo adjuster */
+
+.photo-adjuster-help {
+  margin: 0 0 14px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.photo-frame {
+  position: relative;
+  width: min(280px, 100%);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #222;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.photo-frame:active {
+  cursor: grabbing;
+}
+
+.photo-frame:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.photo-frame img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: none;
+  pointer-events: none;
+}
+
+/* Dims everything outside the circle that will show on the card. */
+.photo-frame-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 200px rgb(0 0 0 / 0.55);
+  border: 2px solid rgb(255 255 255 / 0.8);
+  pointer-events: none;
+}
+
+.photo-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.zoom-control input {
+  width: 160px;
 }
 
 /* Start screen */
