@@ -6,6 +6,7 @@
 import JSZip from 'jszip'
 import type { PhotoStore, TreeData } from '../model/types.ts'
 import { emptyPerson } from '../model/person.ts'
+import { withoutDanglingLinks } from '../model/relationships.ts'
 
 export const FILE_EXTENSION = '.familytree'
 export const FILE_MIME = 'application/x-familytree'
@@ -72,9 +73,14 @@ export async function readTreeFile(file: Blob): Promise<{ tree: TreeData; photos
     }),
   )
 
-  // Fill in any fields added in later versions so older files keep working.
+  return { tree: normalizeTree(json.tree), photos }
+}
+
+/** Fill in fields added in later versions (so older files keep working) and drop broken links. */
+export function normalizeTree(tree: Partial<TreeData>): TreeData {
   const people = Object.fromEntries(
-    Object.entries(json.tree.people ?? {}).map(([id, p]) => [id, { ...emptyPerson(), ...p, id }]),
+    Object.entries(tree.people ?? {}).map(([id, p]) => [id, { ...emptyPerson(), ...p, id }]),
   )
-  return { tree: { ...json.tree, people }, photos }
+  const family = withoutDanglingLinks({ people, parentLinks: tree.parentLinks ?? {}, partnerships: tree.partnerships ?? {} })
+  return { ...tree, name: tree.name ?? 'My family tree', ...family }
 }

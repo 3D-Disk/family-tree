@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { emptyPerson } from '../model/person.ts'
 import { DEFAULT_CROP } from '../model/photoCrop.ts'
+import { addParentLink } from '../model/relationships.ts'
 import { initialState, treeReducer, type PhotoUpdate, type TreeState } from './treeReducer.ts'
 
 const started = (): TreeState => treeReducer(initialState, { type: 'newTree', name: 'Lee Family' })
@@ -16,7 +17,7 @@ const photo = (id: string, crop = DEFAULT_CROP): PhotoUpdate => ({
 describe('treeReducer', () => {
   it('starts a new, unsaved tree', () => {
     const s = started()
-    expect(s.tree).toEqual({ name: 'Lee Family', people: {} })
+    expect(s.tree).toEqual({ name: 'Lee Family', people: {}, parentLinks: {}, partnerships: {} })
     expect(s.dirty).toBe(true)
   })
 
@@ -58,6 +59,27 @@ describe('treeReducer', () => {
     s = treeReducer(s, { type: 'savePerson', person: { ...s.tree!.people[person.id], lastName: 'Lee' } })
     expect(s.tree!.people[person.id]).toMatchObject({ photoId: 'a', avatarId: 'a-card' })
     expect(Object.keys(s.photos).sort()).toEqual(['a', 'a-card'])
+  })
+
+  it('saves family link edits together with the person', () => {
+    let s = started()
+    const kid = { ...emptyPerson(), firstName: 'Kid' }
+    s = treeReducer(s, { type: 'savePerson', person: kid })
+    const mom = { ...emptyPerson(), firstName: 'Mom' }
+    const family = addParentLink({ ...s.tree!, people: { ...s.tree!.people, [mom.id]: mom } }, mom.id, kid.id)
+    s = treeReducer(s, { type: 'savePerson', person: { ...kid, lastName: 'Lee' }, family })
+    expect(Object.keys(s.tree!.people)).toHaveLength(2)
+    expect(s.tree!.people[kid.id].lastName).toBe('Lee')
+    expect(Object.values(s.tree!.parentLinks)).toMatchObject([{ parentId: mom.id, childId: kid.id }])
+  })
+
+  it('deleting a person removes their links', () => {
+    let s = started()
+    const a = emptyPerson(), b = emptyPerson()
+    s = treeReducer(s, { type: 'savePerson', person: a })
+    s = treeReducer(s, { type: 'savePerson', person: b, family: addParentLink(s.tree!, a.id, b.id) })
+    s = treeReducer(s, { type: 'deletePerson', id: a.id })
+    expect(s.tree!.parentLinks).toEqual({})
   })
 
   it('deletes a person and their photos', () => {

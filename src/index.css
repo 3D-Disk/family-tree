@@ -545,6 +545,7 @@ select:focus {
   position: sticky;
   bottom: -16px;
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 12px 0;
   background: var(--surface);
@@ -553,6 +554,222 @@ select:focus {
 
 .spacer {
   flex: 1;
+}
+
+/* Family section */
+
+.btn-small {
+  font-size: 0.82rem;
+  padding: 5px 10px;
+}
+
+.link-btn {
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.family-group {
+  margin-bottom: 16px;
+}
+
+.family-group h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+
+.family-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.family-row select {
+  margin-left: auto;
+}
+
+.partner-row {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.family-row-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.partner-dates {
+  margin-top: 6px;
+}
+
+.family-group > .btn,
+.family-group > .relative-picker {
+  margin-top: 8px;
+}
+
+.person-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 3px 8px 3px 3px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.person-chip.clickable {
+  cursor: pointer;
+}
+
+.person-chip.clickable:hover {
+  background: var(--bg);
+  border-color: var(--border);
+}
+
+.chip-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.chip-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.chip-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.chip-dates {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.relatives-group h4 {
+  margin: 10px 0 4px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.chip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 4px;
+}
+
+/* Relative picker */
+
+.relative-picker {
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+}
+
+.relative-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.picker-note {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.picker-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.picker-tabs button {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.picker-tabs button[aria-selected='true'] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 700;
+}
+
+.picker-search {
+  width: 100%;
+  font: inherit;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.picker-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.picker-list .person-chip {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.picker-more,
+.picker-empty {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 6px 4px;
+}
+
+.picker-new .radio-row {
+  margin-bottom: 6px;
+}
+
+.picker-new .field-hint {
+  margin: 4px 0 8px;
+}
+
+.picker-extra {
+  margin: 10px 0 0;
+  font-size: 0.88rem;
+}
+
+.picker-error {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  color: var(--danger);
+  font-size: 0.85rem;
 }
 
 /* Pop-ups */

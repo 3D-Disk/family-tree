@@ -1,12 +1,17 @@
 import JSZip from 'jszip'
 import { describe, expect, it } from 'vitest'
 import { emptyPerson } from '../model/person.ts'
+import { addParentLink, addPartnership } from '../model/relationships.ts'
 import { readTreeFile, TreeFileError, writeTreeFile } from './fileFormat.ts'
 
 describe('.familytree files', () => {
   it('round-trips people and photos', async () => {
     const person = { ...emptyPerson(), firstName: 'Ann', photoId: 'ph1' }
-    const tree = { name: 'Lee Family', people: { [person.id]: person } }
+    const kid = { ...emptyPerson(), firstName: 'Kid' }
+    const tree = addPartnership(
+      addParentLink({ name: 'Lee Family', people: { [person.id]: person, [kid.id]: kid }, parentLinks: {}, partnerships: {} }, person.id, kid.id, 'adoptive'),
+      person.id, kid.id,
+    )
     const photo = new Blob([new Uint8Array([1, 2, 3])], { type: 'image/jpeg' })
 
     const file = await writeTreeFile(tree, { ph1: photo })
@@ -23,6 +28,19 @@ describe('.familytree files', () => {
     zip.file('tree.json', JSON.stringify({ format: 'familytree', version: 1, tree: { name: 'Old', people: { x: { firstName: 'Bo' } } } }))
     const loaded = await readTreeFile(await zip.generateAsync({ type: 'blob' }))
     expect(loaded.tree.people.x).toMatchObject({ id: 'x', firstName: 'Bo', gender: 'unknown', living: true, photoCrop: null, avatarId: null })
+    expect(loaded.tree.parentLinks).toEqual({})
+    expect(loaded.tree.partnerships).toEqual({})
+  })
+
+  it('drops links to people who are missing from the file', async () => {
+    const zip = new JSZip()
+    zip.file('tree.json', JSON.stringify({ format: 'familytree', version: 1, tree: {
+      name: 'x', people: { a: { firstName: 'A' } },
+      parentLinks: { l1: { id: 'l1', parentId: 'a', childId: 'ghost', type: 'biological' } },
+      partnerships: {},
+    } }))
+    const loaded = await readTreeFile(await zip.generateAsync({ type: 'blob' }))
+    expect(loaded.tree.parentLinks).toEqual({})
   })
 
   it('rejects files that are not family trees', async () => {

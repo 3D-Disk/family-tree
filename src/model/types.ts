@@ -34,10 +34,39 @@ export interface Person {
   updatedAt: string
 }
 
-/** Everything saved in a .familytree file except the photo files themselves. */
-export interface TreeData {
-  name: string
+export type ParentType = 'biological' | 'adoptive' | 'step' | 'foster' | 'guardian'
+
+/** One parent → child link. */
+export interface ParentLink {
+  id: string
+  parentId: string
+  childId: string
+  type: ParentType
+}
+
+export type PartnershipType = 'married' | 'engaged' | 'partner' | 'divorced' | 'separated' | 'widowed'
+
+/** Two people in a couple (married, partners, divorced, …). */
+export interface Partnership {
+  id: string
+  personIds: [string, string]
+  type: PartnershipType
+  /** Wedding / start of the relationship. */
+  start: LifeEvent
+  /** Divorce / separation / death of a partner. */
+  end: LifeEvent
+}
+
+/** People and the links between them. Siblings, cousins etc. are worked out from these. */
+export interface Family {
   people: Record<string, Person>
+  parentLinks: Record<string, ParentLink>
+  partnerships: Record<string, Partnership>
+}
+
+/** Everything saved in a .familytree file except the photo files themselves. */
+export interface TreeData extends Family {
+  name: string
 }
 
 /** Photo blobs keyed by photo id. */

@@ -2,12 +2,13 @@ import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode, typ
 import { formatDate, parseDate } from '../model/dates.ts'
 import { cardPhoto, fullName, newId } from '../model/person.ts'
 import { DEFAULT_CROP, type PhotoCrop } from '../model/photoCrop.ts'
-import type { Gender, LifeEvent, Person } from '../model/types.ts'
+import type { Family, Gender, LifeEvent, Person } from '../model/types.ts'
 import { useTree } from '../state/treeContext.ts'
 import type { PhotoUpdate } from '../state/treeReducer.ts'
 import { preparePhoto, renderAvatar } from '../storage/images.ts'
 import Avatar from './Avatar.tsx'
 import ConfirmDialog from './ConfirmDialog.tsx'
+import FamilySection from './family/FamilySection.tsx'
 import PhotoAdjuster from './PhotoAdjuster.tsx'
 
 interface Props {
@@ -21,6 +22,8 @@ interface Props {
   onDirtyChange(dirty: boolean): void
   /** Lets the parent save the form (from the "Save changes?" pop-up). */
   saveRef: RefObject<(() => void) | null>
+  /** Open another (already saved) person. */
+  onOpenPerson(id: string): void
 }
 
 /** undefined = photo unchanged, null = photo removed. */
@@ -37,6 +40,15 @@ function sameFields(a: Person, b: Person): boolean {
   return JSON.stringify({ ...a, updatedAt: '' }) === JSON.stringify({ ...b, updatedAt: '' })
 }
 
+/** Has anything about the family links (or newly created relatives) changed? */
+function familyChanged(a: Family, b: Family, personId: string): boolean {
+  const others = (f: Family) => Object.keys(f.people).filter((id) => id !== personId).sort()
+  return (
+    JSON.stringify([a.parentLinks, a.partnerships, others(a)]) !==
+    JSON.stringify([b.parentLinks, b.partnerships, others(b)])
+  )
+}
+
 const GENDERS: { value: Gender; label: string }[] = [
   { value: 'male', label: 'Male' },
   { value: 'female', label: 'Female' },
@@ -44,20 +56,26 @@ const GENDERS: { value: Gender; label: string }[] = [
   { value: 'unknown', label: 'Unknown' },
 ]
 
-export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyChange, saveRef }: Props) {
+export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyChange, saveRef, onOpenPerson }: Props) {
   const { state, dispatch, notify } = useTree()
   const [draft, setDraft] = useState(person)
+  const tree = state.tree!
+  const [originalFamily] = useState<Family>(() => ({ people: tree.people, parentLinks: tree.parentLinks, partnerships: tree.partnerships }))
+  const [draftFamily, setDraftFamily] = useState<Family>(originalFamily)
+  const familyEdited = familyChanged(draftFamily, originalFamily, person.id)
+  /** The family including this person's unsaved edits. */
+  const view: Family = { ...draftFamily, people: { ...draftFamily.people, [draft.id]: draft } }
   const [photo, setPhoto] = useState<PhotoChange>(undefined)
   const [photoBusy, setPhotoBusy] = useState(false)
   const [adjusting, setAdjusting] = useState<Adjusting | null>(null)
   const [confirmRemove, setConfirmRemove] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
 
-  const dirty = photo !== undefined || !sameFields(draft, person)
+  const dirty = photo !== undefined || !sameFields(draft, person) || familyEdited
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange])
 
   function commit() {
-    dispatch({ type: 'savePerson', person: draft, photo })
+    dispatch({ type: 'savePerson', person: draft, photo, family: familyEdited ? draftFamily : undefined })
     notify(`${isNew ? 'Added' : 'Updated'} ${fullName(draft)}`)
   }
   useEffect(() => {
@@ -111,7 +129,7 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
   }
 
   function onDelete() {
-    if (!window.confirm(`Delete ${fullName(person)}? This can't be undone.`)) return
+    if (!window.confirm(`Delete ${fullName(person)}? Their links to other family members will be removed too. This can't be undone.`)) return
     dispatch({ type: 'deletePerson', id: person.id })
     notify(`Deleted ${fullName(person)}`)
     onDone()
@@ -198,6 +216,18 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
           This person has died
         </label>
         {!draft.living && <EventFields event={draft.death} onChange={(part, v) => setEvent('death', part, v)} />}
+      </fieldset>
+
+      <fieldset>
+        <legend>Family</legend>
+        <FamilySection
+          person={draft}
+          family={view}
+          onChange={setDraftFamily}
+          openPerson={onOpenPerson}
+          canOpen={(id) => id in tree.people && id !== person.id}
+          onError={(m) => notify(m, 'error')}
+        />
       </fieldset>
 
       <fieldset>

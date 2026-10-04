@@ -1,5 +1,6 @@
 import type { PhotoCrop } from '../model/photoCrop.ts'
-import type { Person, PhotoStore, TreeData } from '../model/types.ts'
+import { removePerson } from '../model/relationships.ts'
+import type { Family, Person, PhotoStore, TreeData } from '../model/types.ts'
 
 /** A new or re-framed profile photo: the original plus the small framed card image. */
 export interface PhotoUpdate {
@@ -45,8 +46,11 @@ export type TreeAction =
     }
   | { type: 'close' }
   | { type: 'renameTree'; name: string }
-  /** Add or update a person. `photo` replaces the profile photo; null removes it; omit to keep it. */
-  | { type: 'savePerson'; person: Person; photo?: PhotoUpdate | null }
+  /**
+   * Add or update a person. `photo` replaces the profile photo; null removes it; omit to keep it.
+   * `family`, if given, replaces all people and links (used when the person's family links were edited too).
+   */
+  | { type: 'savePerson'; person: Person; photo?: PhotoUpdate | null; family?: Family }
   | { type: 'deletePerson'; id: string }
   /** `revision` is the state's revision when the save started. */
   | { type: 'saved'; fileName: string; fileHandle: FileSystemFileHandle | null; revision: number }
@@ -68,7 +72,12 @@ export function treeReducer(state: TreeState, action: TreeAction): TreeState {
 function reduce(state: TreeState, action: TreeAction): TreeState {
   switch (action.type) {
     case 'newTree':
-      return { ...initialState, tree: { name: action.name, people: {} }, dirty: true, revision: state.revision }
+      return {
+        ...initialState,
+        tree: { name: action.name, people: {}, parentLinks: {}, partnerships: {} },
+        dirty: true,
+        revision: state.revision,
+      }
 
     case 'load':
       return {
@@ -101,9 +110,15 @@ function reduce(state: TreeState, action: TreeAction): TreeState {
         if (ph) photos = { ...photos, [ph.id]: ph.blob, [ph.avatarId]: ph.avatarBlob }
       }
       const person: Person = { ...action.person, photoId, avatarId, photoCrop, updatedAt: new Date().toISOString() }
+      const family = action.family ?? state.tree
       return {
         ...state,
-        tree: { ...state.tree, people: { ...state.tree.people, [person.id]: person } },
+        tree: {
+          ...state.tree,
+          people: { ...family.people, [person.id]: person },
+          parentLinks: family.parentLinks,
+          partnerships: family.partnerships,
+        },
         photos,
         dirty: true,
       }
@@ -115,7 +130,7 @@ function reduce(state: TreeState, action: TreeAction): TreeState {
       if (!person) return state
       return {
         ...state,
-        tree: { ...state.tree, people: withoutKeys(state.tree.people, action.id) },
+        tree: { ...state.tree, ...removePerson(state.tree, action.id) },
         photos: withoutKeys(state.photos, person.photoId, person.avatarId),
         dirty: true,
       }

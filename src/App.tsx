@@ -98,6 +98,7 @@ export default function App() {
             onCancel={leavePanel}
             onDirtyChange={setFormDirty}
             saveRef={saveForm}
+            onOpenPerson={selectPerson}
           />
         </SidePanel>
       )}
