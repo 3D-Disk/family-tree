@@ -1,4 +1,14 @@
+import type { PhotoCrop } from '../model/photoCrop.ts'
 import type { Person, PhotoStore, TreeData } from '../model/types.ts'
+
+/** A new or re-framed profile photo: the original plus the small framed card image. */
+export interface PhotoUpdate {
+  id: string
+  blob: Blob
+  avatarId: string
+  avatarBlob: Blob
+  crop: PhotoCrop
+}
 
 export interface TreeState {
   /** null while on the start screen. */
@@ -36,15 +46,16 @@ export type TreeAction =
   | { type: 'close' }
   | { type: 'renameTree'; name: string }
   /** Add or update a person. `photo` replaces the profile photo; null removes it; omit to keep it. */
-  | { type: 'savePerson'; person: Person; photo?: { id: string; blob: Blob } | null }
+  | { type: 'savePerson'; person: Person; photo?: PhotoUpdate | null }
   | { type: 'deletePerson'; id: string }
   /** `revision` is the state's revision when the save started. */
   | { type: 'saved'; fileName: string; fileHandle: FileSystemFileHandle | null; revision: number }
 
-function withoutKey<T>(record: Record<string, T>, key: string | null | undefined): Record<string, T> {
-  if (!key || !(key in record)) return record
+function withoutKeys<T>(record: Record<string, T>, ...keys: (string | null | undefined)[]): Record<string, T> {
+  const present = keys.filter((k): k is string => !!k && k in record)
+  if (present.length === 0) return record
   const copy = { ...record }
-  delete copy[key]
+  for (const k of present) delete copy[k]
   return copy
 }
 
@@ -80,13 +91,16 @@ function reduce(state: TreeState, action: TreeAction): TreeState {
       if (!state.tree) return state
       const previous = state.tree.people[action.person.id]
       let photos = state.photos
-      let photoId = action.person.photoId
+      let { photoId, avatarId, photoCrop } = action.person
       if (action.photo !== undefined) {
-        photos = withoutKey(photos, previous?.photoId)
-        photoId = action.photo?.id ?? null
-        if (action.photo) photos = { ...photos, [action.photo.id]: action.photo.blob }
+        const ph = action.photo
+        photos = withoutKeys(photos, previous?.photoId, previous?.avatarId)
+        photoId = ph?.id ?? null
+        avatarId = ph?.avatarId ?? null
+        photoCrop = ph?.crop ?? null
+        if (ph) photos = { ...photos, [ph.id]: ph.blob, [ph.avatarId]: ph.avatarBlob }
       }
-      const person: Person = { ...action.person, photoId, updatedAt: new Date().toISOString() }
+      const person: Person = { ...action.person, photoId, avatarId, photoCrop, updatedAt: new Date().toISOString() }
       return {
         ...state,
         tree: { ...state.tree, people: { ...state.tree.people, [person.id]: person } },
@@ -101,8 +115,8 @@ function reduce(state: TreeState, action: TreeAction): TreeState {
       if (!person) return state
       return {
         ...state,
-        tree: { ...state.tree, people: withoutKey(state.tree.people, action.id) },
-        photos: withoutKey(state.photos, person.photoId),
+        tree: { ...state.tree, people: withoutKeys(state.tree.people, action.id) },
+        photos: withoutKeys(state.photos, person.photoId, person.avatarId),
         dirty: true,
       }
     }

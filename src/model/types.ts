@@ -1,3 +1,5 @@
+import type { PhotoCrop } from './photoCrop.ts'
+
 export type Gender = 'male' | 'female' | 'other' | 'unknown'
 
 /** A date as the user typed it, e.g. "1/1/2000", "Mar 1890", "abt. 1890". */
@@ -19,8 +21,12 @@ export interface Person {
   /** False when the person has died, even if no death date is known. */
   living: boolean
   death: LifeEvent
-  /** Id of the profile photo in the tree's photo store. */
+  /** Id of the original profile photo in the tree's photo store. */
   photoId: string | null
+  /** How the profile photo is framed on the card. */
+  photoCrop: PhotoCrop | null
+  /** Id of the small framed square image shown on cards. */
+  avatarId: string | null
   /** Short one-line description shown under the name. */
   description: string
   notes: string

@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { emptyPerson } from '../model/person.ts'
-import { initialState, treeReducer, type TreeState } from './treeReducer.ts'
+import { DEFAULT_CROP } from '../model/photoCrop.ts'
+import { initialState, treeReducer, type PhotoUpdate, type TreeState } from './treeReducer.ts'
 
 const started = (): TreeState => treeReducer(initialState, { type: 'newTree', name: 'Lee Family' })
+
+const photo = (id: string, crop = DEFAULT_CROP): PhotoUpdate => ({
+  id,
+  blob: new Blob([id]),
+  avatarId: `${id}-card`,
+  avatarBlob: new Blob([`${id}-card`]),
+  crop,
+})
 
 describe('treeReducer', () => {
   it('starts a new, unsaved tree', () => {
@@ -11,38 +20,49 @@ describe('treeReducer', () => {
     expect(s.dirty).toBe(true)
   })
 
-  it('adds a person with a photo and marks the tree unsaved', () => {
+  it('adds a person with a photo, card image and framing', () => {
     const saved = { ...started(), dirty: false }
     const person = { ...emptyPerson(), firstName: 'Ann' }
-    const blob = new Blob(['x'])
-    const s = treeReducer(saved, { type: 'savePerson', person, photo: { id: 'p1', blob } })
-    expect(s.tree!.people[person.id].firstName).toBe('Ann')
-    expect(s.tree!.people[person.id].photoId).toBe('p1')
-    expect(s.photos).toEqual({ p1: blob })
+    const crop = { ...DEFAULT_CROP, zoom: 2 }
+    const s = treeReducer(saved, { type: 'savePerson', person, photo: photo('p1', crop) })
+    const stored = s.tree!.people[person.id]
+    expect(stored).toMatchObject({ firstName: 'Ann', photoId: 'p1', avatarId: 'p1-card', photoCrop: crop })
+    expect(Object.keys(s.photos).sort()).toEqual(['p1', 'p1-card'])
     expect(s.dirty).toBe(true)
   })
 
   it('replaces and removes photos without leaving orphans', () => {
     const person = emptyPerson()
-    let s = treeReducer(started(), { type: 'savePerson', person, photo: { id: 'a', blob: new Blob(['a']) } })
-    s = treeReducer(s, { type: 'savePerson', person: s.tree!.people[person.id], photo: { id: 'b', blob: new Blob(['b']) } })
-    expect(Object.keys(s.photos)).toEqual(['b'])
+    let s = treeReducer(started(), { type: 'savePerson', person, photo: photo('a') })
+    s = treeReducer(s, { type: 'savePerson', person: s.tree!.people[person.id], photo: photo('b') })
+    expect(Object.keys(s.photos).sort()).toEqual(['b', 'b-card'])
     s = treeReducer(s, { type: 'savePerson', person: s.tree!.people[person.id], photo: null })
     expect(s.photos).toEqual({})
-    expect(s.tree!.people[person.id].photoId).toBeNull()
+    expect(s.tree!.people[person.id]).toMatchObject({ photoId: null, avatarId: null, photoCrop: null })
+  })
+
+  it('re-framing the same photo keeps the original and swaps the card image', () => {
+    const person = emptyPerson()
+    let s = treeReducer(started(), { type: 'savePerson', person, photo: photo('a') })
+    const original = s.photos.a
+    const reframed: PhotoUpdate = { ...photo('a', { ...DEFAULT_CROP, x: 0.2 }), blob: original, avatarId: 'a-card2' }
+    s = treeReducer(s, { type: 'savePerson', person: s.tree!.people[person.id], photo: reframed })
+    expect(Object.keys(s.photos).sort()).toEqual(['a', 'a-card2'])
+    expect(s.photos.a).toBe(original)
+    expect(s.tree!.people[person.id].photoCrop!.x).toBe(0.2)
   })
 
   it('keeps the existing photo when editing other fields', () => {
     const person = emptyPerson()
-    let s = treeReducer(started(), { type: 'savePerson', person, photo: { id: 'a', blob: new Blob(['a']) } })
+    let s = treeReducer(started(), { type: 'savePerson', person, photo: photo('a') })
     s = treeReducer(s, { type: 'savePerson', person: { ...s.tree!.people[person.id], lastName: 'Lee' } })
-    expect(s.tree!.people[person.id].photoId).toBe('a')
-    expect(Object.keys(s.photos)).toEqual(['a'])
+    expect(s.tree!.people[person.id]).toMatchObject({ photoId: 'a', avatarId: 'a-card' })
+    expect(Object.keys(s.photos).sort()).toEqual(['a', 'a-card'])
   })
 
-  it('deletes a person and their photo', () => {
+  it('deletes a person and their photos', () => {
     const person = emptyPerson()
-    let s = treeReducer(started(), { type: 'savePerson', person, photo: { id: 'a', blob: new Blob(['a']) } })
+    let s = treeReducer(started(), { type: 'savePerson', person, photo: photo('a') })
     s = treeReducer(s, { type: 'deletePerson', id: person.id })
     expect(s.tree!.people).toEqual({})
     expect(s.photos).toEqual({})

@@ -1,5 +1,5 @@
 import { formatDate, shortYear } from './dates.ts'
-import type { LifeEvent, Person } from './types.ts'
+import type { LifeEvent, Person, PhotoStore } from './types.ts'
 
 export function newId(): string {
   return crypto.randomUUID()
@@ -19,6 +19,8 @@ export function emptyPerson(): Person {
     living: true,
     death: { date: '', place: '' },
     photoId: null,
+    photoCrop: null,
+    avatarId: null,
     description: '',
     notes: '',
     createdAt: now,
@@ -56,4 +58,9 @@ export function formatLifeEvent(e: LifeEvent): string {
   const place = e.place.trim()
   if (date && place) return `${date} (${place})`
   return date || place
+}
+
+/** The image to show on a person's card: the framed avatar, else the original photo. */
+export function cardPhoto(p: Person, photos: PhotoStore): Blob | undefined {
+  return (p.avatarId && photos[p.avatarId]) || (p.photoId ? photos[p.photoId] : undefined)
 }
