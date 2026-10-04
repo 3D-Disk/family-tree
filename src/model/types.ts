@@ -8,6 +8,44 @@ export interface LifeEvent {
   place: string
 }
 
+export type EventType =
+  | 'residence'
+  | 'immigration'
+  | 'emigration'
+  | 'military'
+  | 'education'
+  | 'occupation'
+  | 'religious'
+  | 'other'
+
+/** Something that happened in a person's life (where they lived, a job, immigration…). */
+export interface PersonEvent {
+  id: string
+  type: EventType
+  /** Name for an "other" event, or extra detail like the job title. */
+  title: string
+  /** Start date (or the only date). */
+  date: string
+  /** End date, for things that lasted a while (e.g. lived there until…). */
+  endDate: string
+  place: string
+  notes: string
+}
+
+export interface Burial {
+  cemetery: string
+  place: string
+  plot: string
+  date: string
+  notes: string
+}
+
+export interface PersonLink {
+  id: string
+  label: string
+  url: string
+}
+
 export interface Person {
   id: string
   firstName: string
@@ -27,9 +65,18 @@ export interface Person {
   photoCrop: PhotoCrop | null
   /** Id of the small framed square image shown on cards. */
   avatarId: string | null
-  /** Short one-line description shown under the name. */
+  /** Short one-line summary. */
   description: string
+  /** Private research notes. */
   notes: string
+  /** Life story, as long as you like. */
+  biography: string
+  events: PersonEvent[]
+  burial: Burial
+  /** Interesting details and fun facts, one per entry. */
+  notable: string[]
+  /** Web links, e.g. a Facebook page or obituary. */
+  links: PersonLink[]
   createdAt: string
   updatedAt: string
 }

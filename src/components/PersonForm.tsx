@@ -9,6 +9,7 @@ import { preparePhoto, renderAvatar } from '../storage/images.ts'
 import Avatar from './Avatar.tsx'
 import ConfirmDialog from './ConfirmDialog.tsx'
 import FamilySection, { type AddKind } from './family/FamilySection.tsx'
+import { BurialFields, EventsEditor, LinksEditor, NotableEditor } from './edit/DetailEditors.tsx'
 import PhotoAdjuster from './PhotoAdjuster.tsx'
 import PhotoViewer from './PhotoViewer.tsx'
 
@@ -236,6 +237,13 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
         {!draft.living && <EventFields event={draft.death} onChange={(part, v) => setEvent('death', part, v)} />}
       </fieldset>
 
+      {!draft.living && (
+        <fieldset>
+          <legend>Burial</legend>
+          <BurialFields burial={draft.burial} onChange={(b) => set('burial', b)} />
+        </fieldset>
+      )}
+
       <fieldset>
         <legend>Family</legend>
         <FamilySection
@@ -250,12 +258,37 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
       </fieldset>
 
       <fieldset>
-        <legend>About</legend>
+        <legend>Biography</legend>
         <Field label="Short description" hint="A one-line summary, e.g. “Family historian” or “Served in WWII”">
           {(id) => <input id={id} value={draft.description} onChange={(e) => set('description', e.target.value)} maxLength={80} />}
         </Field>
-        <Field label="Notes">
-          {(id) => <textarea id={id} rows={5} value={draft.notes} onChange={(e) => set('notes', e.target.value)} />}
+        <Field label="Life story" hint="Write as much as you like. Blank lines start new paragraphs.">
+          {(id) => <textarea id={id} rows={8} value={draft.biography} onChange={(e) => set('biography', e.target.value)} />}
+        </Field>
+      </fieldset>
+
+      <fieldset>
+        <legend>Life events</legend>
+        <p className="field-hint fieldset-hint">
+          Places they lived, immigration, jobs, military service, schooling and more. These appear in the Summary and timeline.
+        </p>
+        <EventsEditor events={draft.events} onChange={(events) => set('events', events)} />
+      </fieldset>
+
+      <fieldset>
+        <legend>Notable details</legend>
+        <NotableEditor items={draft.notable} onChange={(notable) => set('notable', notable)} />
+      </fieldset>
+
+      <fieldset>
+        <legend>Links</legend>
+        <LinksEditor links={draft.links} onChange={(links) => set('links', links)} />
+      </fieldset>
+
+      <fieldset>
+        <legend>Notes</legend>
+        <Field label="Research notes" hint="Sources, open questions, things to check.">
+          {(id) => <textarea id={id} rows={4} value={draft.notes} onChange={(e) => set('notes', e.target.value)} />}
         </Field>
       </fieldset>
 

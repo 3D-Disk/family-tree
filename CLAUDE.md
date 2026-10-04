@@ -7,7 +7,9 @@ English, keep each step small and reviewable, and ask before big design choices.
 ## What this is
 A personal family-tree website. Each person is a **node / tree card**. Clicking a
 card opens a **details side panel** (slides in from the right; can expand to full
-screen). Single user for now; sharing/accounts are a future phase.
+screen) showing a read-only Details view (`PersonDetails`); its Edit button
+switches to the form (`PersonForm`). Saving or cancelling returns to Details.
+Single user for now; sharing/accounts are a future phase.
 
 ## Hard rules
 - **No family data ever leaves the user's computer.** No servers, no cloud APIs,
@@ -42,7 +44,8 @@ screen). Single user for now; sharing/accounts are a future phase.
     `relationships.ts` (lookups, rules like "no loops / max 2 biological
     parents", and pure edit functions), `relatives.ts` (derived relatives with
     gendered labels), `filters.ts` (search + People-list filters; add a
-    filter as one entry in `FILTERS`). `testFamily.ts` builds made-up
+    filter as one entry in `FILTERS`), `details.ts` (age, Summary rows, life
+    timeline, safe links for the Details view). `testFamily.ts` builds made-up
     families for tests.
   - `src/state/`: `treeReducer.ts` (all edits go through it; bumps `revision`
     and sets `dirty`), `TreeProvider.tsx` (save/open/auto-save/notices),
@@ -62,6 +65,11 @@ screen). Single user for now; sharing/accounts are a future phase.
   - `src/components/`: other UI.
     `ConfirmDialog` is the shared pop-up (use it instead of `window.confirm` for
     new prompts). `PhotoAdjuster` frames profile photos.
+- Person details: `biography`, `events` (typed Life events: residence,
+  immigration, occupation… — the Summary derives "Lived in", "Immigration",
+  "Occupation" from them), `burial`, `notable` (list), `links` (only http(s)
+  is ever rendered as a link; see `safeUrl`). Editors live in
+  `components/edit/DetailEditors.tsx`.
 - Profile photos: the original (≤1600px) is `photoId`; the framing is
   `photoCrop` (`src/model/photoCrop.ts`); a 256px framed square is `avatarId`
   and is what cards show (`cardPhoto()`). Keep all three in sync via the
@@ -91,8 +99,8 @@ Run lint, test and build before every push.
 2. People + saving (form, photos, placeholders, .familytree save/open, auto-save recovery). **Done.**
 3. Relationships + derived relatives. **Done.**
 4. Tree visualization (Default view). **Done.**
-5. Details side panel (Summary, Biography, Photo Gallery, Relatives, Events,
-   Burial Location, Notable Details, Links)
+5. Details side panel: Summary, Biography, Relatives, Life events, Burial,
+   Notable details, Links. **Done.** Photo Gallery is next (5b).
 6. No Relations tray + search (**done**, as filters in the People list);
    focus-on-person still to do after the tree
 7. New Person Questionnaire (wizard)

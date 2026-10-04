@@ -1,14 +1,21 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 interface Props {
   title: string
+  /** When this changes (different person, view ↔ edit), scroll back to the top. */
+  scrollKey?: string
   onClose(): void
   children: ReactNode
 }
 
 /** Panel that slides in from the right over the tree; can expand to full screen. */
-export default function SidePanel({ title, onClose, children }: Props) {
+export default function SidePanel({ title, scrollKey, onClose, children }: Props) {
   const [expanded, setExpanded] = useState(false)
+  const body = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    body.current?.scrollTo({ top: 0 })
+  }, [scrollKey])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -39,7 +46,7 @@ export default function SidePanel({ title, onClose, children }: Props) {
           ✕
         </button>
       </header>
-      <div className="side-panel-body">{children}</div>
+      <div className="side-panel-body" ref={body}>{children}</div>
     </aside>
   )
 }

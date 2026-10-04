@@ -26,7 +26,9 @@ Safari and Firefox download a new, dated copy each time you save instead.
   buttons at the bottom left to zoom or fit everything on screen.
   Dashed lines mean divorced/separated couples or adopted, step and foster
   children.
-- **Click a card** to open that person. Hover over a card for quick
+- **Click a card** to see that person's details: Summary, Biography,
+  Relatives, Life events, Burial, Notable details and Links, with a menu to
+  jump between them. Click **Edit details** to change anything. Hover over a card for quick
   "+ Parent", "+ Partner", "+ Child" and "+ Sibling" buttons.
 - **Save** (or Ctrl+S / ⌘S) whenever you like. "● Unsaved changes" at the top
   means there is work not yet in your file.
