@@ -557,18 +557,6 @@ kbd {
   content: '✝ ';
 }
 
-.tree-card-desc {
-  flex-shrink: 1;
-  min-height: 0;
-  max-width: 100%;
-  font-size: 0.72rem;
-  font-style: italic;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* Quick "add relative" buttons, shown under a card on hover or when it's open. */
 .tree-card-actions {
   position: absolute;

@@ -251,7 +251,7 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
 
       <fieldset>
         <legend>About</legend>
-        <Field label="Short description" hint="Shown on their card, e.g. “Family historian” or “Served in WWII”">
+        <Field label="Short description" hint="A one-line summary, e.g. “Family historian” or “Served in WWII”">
           {(id) => <input id={id} value={draft.description} onChange={(e) => set('description', e.target.value)} maxLength={80} />}
         </Field>
         <Field label="Notes">

@@ -60,7 +60,6 @@ export default function TreeCard({ data }: NodeProps<TreeCardNode>) {
       <Avatar photo={photo} gender={person.gender} size={56} alt={name} />
       <FittedName name={name} />
       {span && <div className="tree-card-dates">{span}</div>}
-      {person.description.trim() && <div className="tree-card-desc">{person.description}</div>}
       <div className="tree-card-actions" role="group" aria-label={`Add a relative of ${name}`}>
         {ACTIONS.map((a) => (
           <button
