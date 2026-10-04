@@ -1,8 +1,10 @@
 import type { NodeProps, Node } from '@xyflow/react'
+import { useLayoutEffect, useRef } from 'react'
 import { cardName, lifeSpan } from '../../model/person.ts'
 import type { Person } from '../../model/types.ts'
 import Avatar from '../Avatar.tsx'
 import type { AddKind } from '../family/FamilySection.tsx'
+import { LAYOUT } from '../../layout/familyLayout.ts'
 
 
 export type TreeCardData = {
@@ -14,6 +16,28 @@ export type TreeCardData = {
 }
 
 export type TreeCardNode = Node<TreeCardData, 'person'>
+
+const NAME_MAX_PX = 14.4
+const NAME_MIN_PX = 9
+
+/** The person's name, shrinking the text until the whole name fits on two lines. */
+function FittedName({ name }: { name: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current!
+    let size = NAME_MAX_PX
+    el.style.fontSize = `${size}px`
+    while (el.scrollHeight > el.clientHeight + 1 && size > NAME_MIN_PX) {
+      size -= 0.5
+      el.style.fontSize = `${size}px`
+    }
+  }, [name])
+  return (
+    <div ref={ref} className="tree-card-name">
+      {name}
+    </div>
+  )
+}
 
 const ACTIONS: { kind: AddKind; label: string }[] = [
   { kind: 'parent', label: '+ Parent' },
@@ -30,10 +54,11 @@ export default function TreeCard({ data }: NodeProps<TreeCardNode>) {
   return (
     <div
       className={`tree-card gender-${person.gender}${selected ? ' selected' : ''}${dimmed ? ' dimmed' : ''}${person.living ? '' : ' deceased'}`}
-      title={`Open ${name}`}
+      style={{ width: LAYOUT.cardWidth, height: LAYOUT.cardHeight }}
+      title={name}
     >
-      <Avatar photo={photo} gender={person.gender} size={64} alt={name} />
-      <div className="tree-card-name">{name}</div>
+      <Avatar photo={photo} gender={person.gender} size={56} alt={name} />
+      <FittedName name={name} />
       {span && <div className="tree-card-dates">{span}</div>}
       {person.description.trim() && <div className="tree-card-desc">{person.description}</div>}
       <div className="tree-card-actions" role="group" aria-label={`Add a relative of ${name}`}>

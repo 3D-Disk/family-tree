@@ -10,6 +10,7 @@ import Avatar from './Avatar.tsx'
 import ConfirmDialog from './ConfirmDialog.tsx'
 import FamilySection, { type AddKind } from './family/FamilySection.tsx'
 import PhotoAdjuster from './PhotoAdjuster.tsx'
+import PhotoViewer from './PhotoViewer.tsx'
 
 interface Props {
   person: Person
@@ -71,6 +72,7 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
   const [photoBusy, setPhotoBusy] = useState(false)
   const [adjusting, setAdjusting] = useState<Adjusting | null>(null)
   const [confirmRemove, setConfirmRemove] = useState(false)
+  const [viewing, setViewing] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
 
   const dirty = photo !== undefined || !sameFields(draft, person) || familyEdited
@@ -89,6 +91,8 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
     setDraft((d) => ({ ...d, [key]: { ...d[key], [part]: value } }))
 
   const shownPhoto = photo === undefined ? cardPhoto(draft, state.photos) : photo?.avatarBlob
+  /** The full, uncropped photo (for the enlarged view). */
+  const originalPhoto = photo === undefined ? (draft.photoId ? state.photos[draft.photoId] : undefined) : photo?.blob
 
   async function onPhotoChosen(file: File | undefined) {
     if (!file) return
@@ -140,7 +144,19 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
   return (
     <form className="person-form" onSubmit={onSubmit}>
       <section className="form-photo">
-        <Avatar photo={shownPhoto} gender={draft.gender} size={96} alt={fullName(draft)} />
+        {originalPhoto ? (
+          <button
+            type="button"
+            className="photo-enlarge"
+            onClick={() => setViewing(true)}
+            title="Click to see the full photo"
+            aria-label={`See ${fullName(draft)}'s photo full size`}
+          >
+            <Avatar photo={shownPhoto} gender={draft.gender} size={96} alt={fullName(draft)} />
+          </button>
+        ) : (
+          <Avatar photo={shownPhoto} gender={draft.gender} size={96} alt={fullName(draft)} />
+        )}
         <div className="form-photo-actions">
           <button type="button" className="btn" onClick={() => fileInput.current?.click()} disabled={photoBusy}>
             {photoBusy ? 'Processing…' : shownPhoto ? 'Change photo' : 'Add photo'}
@@ -265,6 +281,10 @@ export default function PersonForm({ person, isNew, onDone, onCancel, onDirtyCha
           onDone={onAdjusted}
           onCancel={() => setAdjusting(null)}
         />
+      )}
+
+      {viewing && originalPhoto && (
+        <PhotoViewer photo={originalPhoto} alt={`Photo of ${fullName(draft)}`} onClose={() => setViewing(false)} />
       )}
 
       {confirmRemove && (
