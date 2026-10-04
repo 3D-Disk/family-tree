@@ -6,4 +6,6 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   base: './',
   plugins: [react()],
+  // The tree-drawing library makes the bundle ~650 kB (≈200 kB compressed), which is fine here.
+  build: { chunkSizeWarningLimit: 900 },
 })

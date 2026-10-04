@@ -21,7 +21,13 @@ Safari and Firefox download a new, dated copy each time you save instead.
   start a new tree.
 - **Add person:** opens a form on the right. Dates can be exact ("1/31/1950")
   or rough ("Mar 1890", "abt. 1890", "before 1900").
-- **Click a card** to edit that person, or delete them.
+- **The tree:** generations are drawn in rows with lines between relatives.
+  Drag the background to move around, scroll or pinch to zoom, and use the
+  buttons at the bottom left to zoom or fit everything on screen.
+  Dashed lines mean divorced/separated couples or adopted, step and foster
+  children.
+- **Click a card** to open that person. Hover over a card for quick
+  "+ Parent", "+ Partner", "+ Child" and "+ Sibling" buttons.
 - **Save** (or Ctrl+S / ⌘S) whenever you like. "● Unsaved changes" at the top
   means there is work not yet in your file.
 - **Family:** in a person's panel, add parents, partners, children and brothers

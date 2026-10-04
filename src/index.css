@@ -16,6 +16,8 @@
   --female-bg: #f4e0e8;
   --neutral: #9a9186;
   --neutral-bg: #ebe6de;
+  --line: #8f8374;
+  --minimap-card: #c9bca8;
 
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
@@ -292,10 +294,6 @@ select:disabled,
   font-size: 0.9rem;
 }
 
-.person-card.dimmed {
-  opacity: 0.3;
-}
-
 /* Canvas */
 
 .canvas {
@@ -417,15 +415,6 @@ kbd {
   color: var(--text-muted);
 }
 
-/* People board (temporary layout until the tree view) */
-
-.board {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 14px;
-  align-content: start;
-}
-
 .board-empty {
   display: grid;
   place-items: center;
@@ -434,72 +423,6 @@ kbd {
 
 .empty-tree .btn {
   margin-top: 16px;
-}
-
-.person-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 10px;
-  font: inherit;
-  text-align: left;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-top: 4px solid var(--neutral);
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
-  cursor: pointer;
-  transition: box-shadow 0.15s, transform 0.15s;
-}
-
-.person-card.gender-male {
-  border-top-color: var(--male);
-}
-
-.person-card.gender-female {
-  border-top-color: var(--female);
-}
-
-.person-card:hover {
-  box-shadow: 0 6px 16px rgb(0 0 0 / 0.1);
-  transform: translateY(-1px);
-}
-
-.person-card.selected {
-  outline: 3px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.person-card-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.person-card-name {
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-
-.person-card-dates {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.person-card.deceased .person-card-dates::before {
-  content: '✝ ';
-}
-
-.person-card-desc {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-style: italic;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .avatar {
@@ -531,6 +454,185 @@ kbd {
 
 .avatar-female .avatar-fg {
   fill: var(--female);
+}
+
+/* Tree */
+
+.tree-canvas {
+  padding: 0;
+  min-width: 0;
+}
+
+.tree-canvas .react-flow {
+  --xy-background-color: transparent;
+  --xy-controls-button-background-color: var(--surface);
+  --xy-controls-button-border-color: var(--border);
+  --xy-controls-button-color: var(--text);
+}
+
+.tree-canvas .react-flow__node {
+  cursor: pointer;
+}
+
+.tree-canvas .react-flow__node-lines,
+.tree-canvas .react-flow__node-label {
+  pointer-events: none !important;
+  cursor: default;
+}
+
+.tree-lines {
+  overflow: visible;
+}
+
+.tree-line {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.tree-line-partner {
+  stroke-width: 3;
+}
+
+.tree-card {
+  position: relative;
+  width: 168px;
+  height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px 8px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--neutral);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.06);
+  transition: box-shadow 0.15s, opacity 0.15s;
+}
+
+.tree-card.gender-male {
+  border-top-color: var(--male);
+}
+
+.tree-card.gender-female {
+  border-top-color: var(--female);
+}
+
+.react-flow__node:hover .tree-card {
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.14);
+}
+
+.tree-card.selected {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tree-card.dimmed {
+  opacity: 0.25;
+}
+
+.tree-card-name {
+  margin-top: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.tree-card-dates {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.tree-card.deceased .tree-card-dates::before {
+  content: '✝ ';
+}
+
+.tree-card-desc {
+  max-width: 100%;
+  font-size: 0.72rem;
+  font-style: italic;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Quick "add relative" buttons, shown under a card on hover or when it's open. */
+.tree-card-actions {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.12);
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.react-flow__node:hover .tree-card-actions,
+.tree-card.selected .tree-card-actions,
+.tree-card:focus-within .tree-card-actions {
+  display: flex;
+}
+
+.react-flow__node:hover {
+  z-index: 10 !important;
+}
+
+.tree-card-actions button {
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.tree-card-actions button:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.tree-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.tree-label strong {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.tree-minimap {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .tree-minimap {
+    display: none;
+  }
 }
 
 /* Side panel */
