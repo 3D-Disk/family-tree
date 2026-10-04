@@ -23,6 +23,11 @@ export function emptyPerson(): Person {
     avatarId: null,
     description: '',
     notes: '',
+    biography: '',
+    events: [],
+    burial: { cemetery: '', place: '', plot: '', date: '', notes: '' },
+    notable: [],
+    links: [],
     createdAt: now,
     updatedAt: now,
   }
