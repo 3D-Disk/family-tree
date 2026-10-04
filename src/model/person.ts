@@ -28,6 +28,7 @@ export function emptyPerson(): Person {
     burial: { cemetery: '', place: '', plot: '', date: '', notes: '' },
     notable: [],
     links: [],
+    gallery: [],
     createdAt: now,
     updatedAt: now,
   }
@@ -68,4 +69,10 @@ export function formatLifeEvent(e: LifeEvent): string {
 /** The image to show on a person's card: the framed avatar, else the original photo. */
 export function cardPhoto(p: Person, photos: PhotoStore): Blob | undefined {
   return (p.avatarId && photos[p.avatarId]) || (p.photoId ? photos[p.photoId] : undefined)
+}
+
+/** Every photo-store id this person uses (profile, card image, gallery photos and thumbnails). */
+export function photoIdsOf(p: Person | undefined): string[] {
+  if (!p) return []
+  return [p.photoId, p.avatarId, ...p.gallery.flatMap((g) => [g.photoId, g.thumbId])].filter((id): id is string => !!id)
 }

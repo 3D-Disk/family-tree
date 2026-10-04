@@ -50,3 +50,19 @@ export async function renderAvatar(photo: Blob, crop: PhotoCrop): Promise<Blob> 
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not process the image.'))), 'image/jpeg', 0.9),
   )
 }
+
+const THUMB_SIZE = 320
+
+/** A small version of a photo for gallery grids (longest side 320px). */
+export async function makeThumbnail(photo: Blob): Promise<Blob> {
+  const bitmap = await createImageBitmap(photo)
+  const scale = Math.min(1, THUMB_SIZE / Math.max(bitmap.width, bitmap.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale))
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  bitmap.close()
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not process the image.'))), 'image/jpeg', 0.85),
+  )
+}

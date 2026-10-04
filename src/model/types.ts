@@ -46,6 +46,17 @@ export interface PersonLink {
   url: string
 }
 
+/** One photo in a person's gallery. */
+export interface GalleryPhoto {
+  id: string
+  /** Full-size image (≤1600px) in the photo store. */
+  photoId: string
+  /** Small square-ish thumbnail for the grid. */
+  thumbId: string
+  caption: string
+  date: string
+}
+
 export interface Person {
   id: string
   firstName: string
@@ -77,6 +88,8 @@ export interface Person {
   notable: string[]
   /** Web links, e.g. a Facebook page or obituary. */
   links: PersonLink[]
+  /** Extra photos, in display order. */
+  gallery: GalleryPhoto[]
   createdAt: string
   updatedAt: string
 }

@@ -82,6 +82,21 @@ describe('treeReducer', () => {
     expect(s.tree!.parentLinks).toEqual({})
   })
 
+  it('adds gallery photos and removes the ones taken out of the gallery', () => {
+    const person = emptyPerson()
+    const g = (n: string) => ({ id: n, photoId: `${n}-full`, thumbId: `${n}-thumb`, caption: '', date: '' })
+    const blobs = (...ns: string[]) => Object.fromEntries(ns.flatMap((n) => [[`${n}-full`, new Blob([n])], [`${n}-thumb`, new Blob([n])]]))
+    let s = treeReducer(started(), { type: 'savePerson', person: { ...person, gallery: [g('a'), g('b')] }, newPhotos: blobs('a', 'b') })
+    expect(Object.keys(s.photos).sort()).toEqual(['a-full', 'a-thumb', 'b-full', 'b-thumb'])
+    s = treeReducer(s, { type: 'savePerson', person: { ...s.tree!.people[person.id], gallery: [g('b')] } })
+    expect(Object.keys(s.photos).sort()).toEqual(['b-full', 'b-thumb'])
+    // Changing the profile photo leaves the gallery alone.
+    s = treeReducer(s, { type: 'savePerson', person: s.tree!.people[person.id], photo: photo('p') })
+    expect(Object.keys(s.photos).sort()).toEqual(['b-full', 'b-thumb', 'p', 'p-card'])
+    s = treeReducer(s, { type: 'deletePerson', id: person.id })
+    expect(s.photos).toEqual({})
+  })
+
   it('deletes a person and their photos', () => {
     const person = emptyPerson()
     let s = treeReducer(started(), { type: 'savePerson', person, photo: photo('a') })

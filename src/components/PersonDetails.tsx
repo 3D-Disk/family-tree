@@ -4,27 +4,38 @@ import { linkHost, safeUrl, summaryRows, timeline } from '../model/details.ts'
 import { cardPhoto, fullName, lifeSpan } from '../model/person.ts'
 import { relativesOf } from '../model/relatives.ts'
 import { useTree } from '../state/treeContext.ts'
+import { usePhotoUrl } from '../state/usePhotoUrl.ts'
 import Avatar from './Avatar.tsx'
 import PersonChip from './family/PersonChip.tsx'
-import PhotoViewer from './PhotoViewer.tsx'
+import DeletePersonButton from './DeletePersonButton.tsx'
+import PhotoViewer, { type ViewerPhoto } from './PhotoViewer.tsx'
 
 interface Props {
   personId: string
   onEdit(): void
   onOpenPerson(id: string): void
+  onDeleted(): void
 }
 
 /** Read-only, nicely laid out view of everything about one person. */
-export default function PersonDetails({ personId, onEdit, onOpenPerson }: Props) {
+export default function PersonDetails({ personId, onEdit, onOpenPerson, onDeleted }: Props) {
   const { state } = useTree()
   const tree = state.tree!
   const p = tree.people[personId]
-  const [viewing, setViewing] = useState(false)
+  /** Index into `album` of the photo shown full size, or null. */
+  const [viewing, setViewing] = useState<number | null>(null)
   const body = useRef<HTMLDivElement>(null)
   if (!p) return null
 
   const name = fullName(p)
   const original = p.photoId ? state.photos[p.photoId] : undefined
+  // Profile photo first, then the gallery.
+  const album: (ViewerPhoto & { thumb: Blob | undefined; label?: string })[] = [
+    ...(original ? [{ blob: original, thumb: cardPhoto(p, state.photos), caption: '', label: 'Profile photo' }] : []),
+    ...p.gallery
+      .filter((g) => state.photos[g.photoId])
+      .map((g) => ({ blob: state.photos[g.photoId], thumb: state.photos[g.thumbId], caption: g.caption, date: g.date })),
+  ]
   const summary = summaryRows(p)
   const events = timeline(tree, p)
   const groups = relativesOf(tree, p.id)
@@ -56,6 +67,30 @@ export default function PersonDetails({ personId, onEdit, onOpenPerson }: Props)
   }
   if (p.biography.trim()) {
     sections.push({ id: 'biography', title: 'Biography', content: <div className="prose">{p.biography}</div> })
+  }
+  if (p.gallery.length) {
+    sections.push({
+      id: 'photos',
+      title: 'Photos',
+      content: (
+        <ul className="gallery-grid">
+          {album.map((a, i) => (
+            <li key={i}>
+              <button type="button" className="gallery-tile" onClick={() => setViewing(i)} title="See full size">
+                <GalleryImage blob={a.thumb ?? a.blob} alt={a.caption || a.label || `Photo ${i + 1}`} />
+              </button>
+              {(a.label || a.caption || a.date) && (
+                <div className="gallery-caption">
+                  {a.label && <strong>{a.label}</strong>}
+                  {a.caption && <span>{a.caption}</span>}
+                  {a.date && <span className="gallery-date">{formatDate(a.date)}</span>}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      ),
+    })
   }
   if (groups.length) {
     sections.push({
@@ -167,7 +202,7 @@ export default function PersonDetails({ personId, onEdit, onOpenPerson }: Props)
           <button
             type="button"
             className="photo-enlarge"
-            onClick={() => setViewing(true)}
+            onClick={() => setViewing(0)}
             title="Click to see the full photo"
             aria-label={`See ${name}'s photo full size`}
           >
@@ -186,9 +221,12 @@ export default function PersonDetails({ personId, onEdit, onOpenPerson }: Props)
           )}
           {lifeSpan(p) && <div className="details-sub">{p.living ? lifeSpan(p) : `✝ ${lifeSpan(p)}`}</div>}
           {p.description.trim() && <div className="details-description">{p.description}</div>}
-          <button type="button" className="btn btn-primary details-edit" onClick={onEdit}>
-            Edit details
-          </button>
+          <div className="details-actions">
+            <button type="button" className="btn btn-primary" onClick={onEdit}>
+              Edit details
+            </button>
+            <DeletePersonButton person={p} onDeleted={onDeleted} />
+          </div>
         </div>
       </header>
 
@@ -219,7 +257,14 @@ export default function PersonDetails({ personId, onEdit, onOpenPerson }: Props)
         </p>
       )}
 
-      {viewing && original && <PhotoViewer photo={original} alt={`Photo of ${name}`} onClose={() => setViewing(false)} />}
+      {viewing !== null && album.length > 0 && (
+        <PhotoViewer photos={album} startIndex={viewing} alt={`Photo of ${name}`} onClose={() => setViewing(null)} />
+      )}
     </div>
   )
+}
+
+function GalleryImage({ blob, alt }: { blob: Blob; alt: string }) {
+  const url = usePhotoUrl(blob)
+  return url ? <img src={url} alt={alt} /> : null
 }

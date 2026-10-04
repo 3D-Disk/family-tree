@@ -1,4 +1,5 @@
 import type { PhotoCrop } from '../model/photoCrop.ts'
+import { photoIdsOf } from '../model/person.ts'
 import { removePerson } from '../model/relationships.ts'
 import type { Family, Person, PhotoStore, TreeData } from '../model/types.ts'
 
@@ -52,8 +53,10 @@ export type TreeAction =
   /**
    * Add or update a person. `photo` replaces the profile photo; null removes it; omit to keep it.
    * `family`, if given, replaces all people and links (used when the person's family links were edited too).
+   * `newPhotos` adds images the person now uses (e.g. new gallery photos). Photos the person no longer
+   * uses are removed from the store.
    */
-  | { type: 'savePerson'; person: Person; photo?: PhotoUpdate | null; family?: Family }
+  | { type: 'savePerson'; person: Person; photo?: PhotoUpdate | null; family?: Family; newPhotos?: PhotoStore }
   | { type: 'deletePerson'; id: string }
   /** `revision` is the state's revision when the save started. */
   | { type: 'saved'; fileName: string; fileHandle: FileSystemFileHandle | null; revision: number }
@@ -104,17 +107,19 @@ function reduce(state: TreeState, action: TreeAction): TreeState {
     case 'savePerson': {
       if (!state.tree) return state
       const previous = state.tree.people[action.person.id]
-      let photos = state.photos
+      let photos = { ...state.photos, ...action.newPhotos }
       let { photoId, avatarId, photoCrop } = action.person
       if (action.photo !== undefined) {
         const ph = action.photo
-        photos = withoutKeys(photos, previous?.photoId, previous?.avatarId)
         photoId = ph?.id ?? null
         avatarId = ph?.avatarId ?? null
         photoCrop = ph?.crop ?? null
         if (ph) photos = { ...photos, [ph.id]: ph.blob, [ph.avatarId]: ph.avatarBlob }
       }
       const person: Person = { ...action.person, photoId, avatarId, photoCrop, updatedAt: new Date().toISOString() }
+      // Drop images this person no longer uses, so nothing is left orphaned.
+      const stillUsed = new Set(photoIdsOf(person))
+      photos = withoutKeys(photos, ...photoIdsOf(previous).filter((id) => !stillUsed.has(id)))
       const family = action.family ?? state.tree
       return {
         ...state,
@@ -136,7 +141,7 @@ function reduce(state: TreeState, action: TreeAction): TreeState {
       return {
         ...state,
         tree: { ...state.tree, ...removePerson(state.tree, action.id) },
-        photos: withoutKeys(state.photos, person.photoId, person.avatarId),
+        photos: withoutKeys(state.photos, ...photoIdsOf(person)),
         dirty: true,
       }
     }

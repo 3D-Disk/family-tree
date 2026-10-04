@@ -23,11 +23,26 @@ describe('.familytree files', () => {
     expect(new Uint8Array(await loaded.photos.ph1.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]))
   })
 
+  it('keeps gallery photos, captions and dates', async () => {
+    const person = {
+      ...emptyPerson(),
+      gallery: [{ id: 'g1', photoId: 'full1', thumbId: 'thumb1', caption: 'Wedding day', date: 'Jun 1950' }],
+    }
+    const tree = { name: 'x', people: { [person.id]: person }, parentLinks: {}, partnerships: {} }
+    const photos = {
+      full1: new Blob([new Uint8Array([9, 9])], { type: 'image/jpeg' }),
+      thumb1: new Blob([new Uint8Array([7])], { type: 'image/jpeg' }),
+    }
+    const loaded = await readTreeFile(await writeTreeFile(tree, photos))
+    expect(loaded.tree.people[person.id].gallery).toEqual(person.gallery)
+    expect(Object.keys(loaded.photos).sort()).toEqual(['full1', 'thumb1'])
+  })
+
   it('fills in fields missing from older files', async () => {
     const zip = new JSZip()
     zip.file('tree.json', JSON.stringify({ format: 'familytree', version: 1, tree: { name: 'Old', people: { x: { firstName: 'Bo' } } } }))
     const loaded = await readTreeFile(await zip.generateAsync({ type: 'blob' }))
-    expect(loaded.tree.people.x).toMatchObject({ id: 'x', firstName: 'Bo', gender: 'unknown', living: true, photoCrop: null, avatarId: null, biography: '', events: [], notable: [], links: [] })
+    expect(loaded.tree.people.x).toMatchObject({ id: 'x', firstName: 'Bo', gender: 'unknown', living: true, photoCrop: null, avatarId: null, biography: '', events: [], notable: [], links: [], gallery: [] })
     expect(loaded.tree.people.x.burial).toEqual({ cemetery: '', place: '', plot: '', date: '', notes: '' })
     expect(loaded.tree.parentLinks).toEqual({})
     expect(loaded.tree.partnerships).toEqual({})

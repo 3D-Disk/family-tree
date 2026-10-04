@@ -63,13 +63,6 @@ export default function AppHeader({ onAddPerson, beforeFileAction, query, onQuer
           Save
         </button>
 
-        <label className="views-select">
-          <span>View</span>
-          <select defaultValue="default" aria-label="Choose a view">
-            <option value="default">Default</option>
-          </select>
-        </label>
-
         <input
           className="search"
           type="search"
