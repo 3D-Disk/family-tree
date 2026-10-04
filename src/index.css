@@ -497,8 +497,6 @@ kbd {
 
 .tree-card {
   position: relative;
-  width: 168px;
-  height: 132px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -533,11 +531,16 @@ kbd {
   opacity: 0.25;
 }
 
+.tree-card > * {
+  flex-shrink: 0;
+}
+
 .tree-card-name {
   margin-top: 6px;
   font-weight: 700;
   font-size: 0.9rem;
   line-height: 1.2;
+  max-width: 100%;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -546,22 +549,13 @@ kbd {
 }
 
 .tree-card-dates {
+  margin-top: 5px;
   font-size: 0.78rem;
   color: var(--text-muted);
 }
 
 .tree-card.deceased .tree-card-dates::before {
   content: '✝ ';
-}
-
-.tree-card-desc {
-  max-width: 100%;
-  font-size: 0.72rem;
-  font-style: italic;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Quick "add relative" buttons, shown under a card on hover or when it's open. */
@@ -1044,6 +1038,58 @@ select:focus {
   background: color-mix(in srgb, var(--danger) 10%, var(--surface));
   color: var(--danger);
   font-size: 0.85rem;
+}
+
+/* Enlarged photo */
+
+.photo-enlarge {
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: zoom-in;
+  line-height: 0;
+}
+
+.photo-enlarge:hover .avatar,
+.photo-enlarge:focus-visible .avatar {
+  box-shadow: 0 0 0 3px var(--accent);
+}
+
+.photo-viewer {
+  max-width: 100vw;
+  max-height: 100vh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  cursor: zoom-out;
+}
+
+.photo-viewer::backdrop {
+  background: rgb(20 18 15 / 0.85);
+}
+
+.photo-viewer img {
+  display: block;
+  max-width: min(92vw, 1200px);
+  max-height: 88vh;
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.5);
+}
+
+.photo-viewer-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.9);
+  color: var(--text);
+  cursor: pointer;
 }
 
 /* Pop-ups */
