@@ -17,7 +17,7 @@ import type { Family, ParentLink, ParentType, Partnership } from '../model/types
 
 export const LAYOUT = {
   cardWidth: 168,
-  cardHeight: 140,
+  cardHeight: 138,
   /** Space between partners (room for the partner line). */
   partnerGap: 36,
   /** Space between siblings. */
