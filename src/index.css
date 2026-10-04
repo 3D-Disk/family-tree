@@ -453,6 +453,14 @@ kbd {
 .tree-canvas {
   padding: 0;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
 }
 
 .tree-canvas .react-flow {
@@ -519,6 +527,10 @@ kbd {
   outline-offset: 2px;
 }
 
+.tree-card.focused {
+  box-shadow: 0 0 0 3px var(--warn-text), 0 6px 18px rgb(0 0 0 / 0.14);
+}
+
 .tree-card.dimmed {
   opacity: 0.25;
 }
@@ -548,6 +560,38 @@ kbd {
 
 .tree-card.deceased .tree-card-dates::before {
   content: '✝ ';
+}
+
+/* Bar shown over the tree while focused on one person */
+.focus-bar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 16px;
+  padding: 8px 14px;
+  background: var(--warn-bg);
+  border-bottom: 1px solid var(--warn-text);
+  font-size: 0.9rem;
+}
+
+.focus-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.focus-select select {
+  padding: 3px 6px;
+}
+
+.focus-note {
+  flex-basis: 100%;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--warn-text);
 }
 
 /* Quick "add relative" buttons, shown under a card on hover or when it's open. */

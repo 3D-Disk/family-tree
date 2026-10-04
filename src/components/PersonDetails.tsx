@@ -15,10 +15,14 @@ interface Props {
   onEdit(): void
   onOpenPerson(id: string): void
   onDeleted(): void
+  /** Show only this person's line on the tree. */
+  onFocus(): void
+  /** True when the tree is already focused on this person. */
+  isFocused: boolean
 }
 
 /** Read-only, nicely laid out view of everything about one person. */
-export default function PersonDetails({ personId, onEdit, onOpenPerson, onDeleted }: Props) {
+export default function PersonDetails({ personId, onEdit, onOpenPerson, onDeleted, onFocus, isFocused }: Props) {
   const { state } = useTree()
   const tree = state.tree!
   const p = tree.people[personId]
@@ -224,6 +228,15 @@ export default function PersonDetails({ personId, onEdit, onOpenPerson, onDelete
           <div className="details-actions">
             <button type="button" className="btn btn-primary" onClick={onEdit}>
               Edit details
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={onFocus}
+              disabled={isFocused}
+              title="Show only their ancestors, descendants, partners and brothers & sisters"
+            >
+              {isFocused ? 'Focused on tree' : 'Focus on tree'}
             </button>
             <DeletePersonButton person={p} onDeleted={onDeleted} />
           </div>

@@ -11,6 +11,8 @@ export type TreeCardData = {
   person: Person
   photo: Blob | undefined
   selected: boolean
+  /** The person the tree is focused on. */
+  focused?: boolean
   dimmed: boolean
   onAdd(id: string, kind: AddKind): void
 }
@@ -48,12 +50,12 @@ const ACTIONS: { kind: AddKind; label: string }[] = [
 
 /** One person's card on the tree. Clicking it opens their panel; hovering shows quick "add" buttons. */
 export default function TreeCard({ data }: NodeProps<TreeCardNode>) {
-  const { person, photo, selected, dimmed } = data
+  const { person, photo, selected, focused, dimmed } = data
   const name = cardName(person)
   const span = lifeSpan(person)
   return (
     <div
-      className={`tree-card gender-${person.gender}${selected ? ' selected' : ''}${dimmed ? ' dimmed' : ''}${person.living ? '' : ' deceased'}`}
+      className={`tree-card gender-${person.gender}${selected ? ' selected' : ''}${focused ? ' focused' : ''}${dimmed ? ' dimmed' : ''}${person.living ? '' : ' deceased'}`}
       style={{ width: LAYOUT.cardWidth, height: LAYOUT.cardHeight }}
       title={name}
     >

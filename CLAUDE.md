@@ -45,7 +45,9 @@ Single user for now; sharing/accounts are a future phase.
     parents", and pure edit functions), `relatives.ts` (derived relatives with
     gendered labels), `filters.ts` (search + People-list filters; add a
     filter as one entry in `FILTERS`), `details.ts` (age, Summary rows, life
-    timeline, safe links for the Details view). `testFamily.ts` builds made-up
+    timeline, safe links for the Details view), `focus.ts` ("Focus on tree":
+    ancestors/descendants within N generations + partners + siblings, and
+    `subFamily` to cut the family down before layout). `testFamily.ts` builds made-up
     families for tests.
   - `src/state/`: `treeReducer.ts` (all edits go through it; bumps `revision`
     and sets `dirty`), `TreeProvider.tsx` (save/open/auto-save/notices),
@@ -110,7 +112,8 @@ Run lint, test and build before every push.
 5. Details side panel: Summary, Biography, Photos (gallery), Relatives, Life
    events, Burial, Notable details, Links. **Done.**
 6. No Relations tray + search (**done**, as filters in the People list);
-   focus-on-person still to do after the tree
+   focus-on-person (**done**: "Focus on tree" in Details + bar with
+   generations up/down and "Show everyone")
 7. New Person Questionnaire (wizard)
 8. Views (drag to reorder, save/select; re-add the header Views dropdown)
 9. Free-placement toggle for views
