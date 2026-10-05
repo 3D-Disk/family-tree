@@ -4,12 +4,14 @@ interface Props {
   title: string
   /** When this changes (different person, view ↔ edit), scroll back to the top. */
   scrollKey?: string
+  /** Back / forward through previously opened people (names of where they lead, or null). */
+  nav?: { back: string | null; forward: string | null; onBack(): void; onForward(): void }
   onClose(): void
   children: ReactNode
 }
 
 /** Panel that slides in from the right over the tree; can expand to full screen. */
-export default function SidePanel({ title, scrollKey, onClose, children }: Props) {
+export default function SidePanel({ title, scrollKey, nav, onClose, children }: Props) {
   const [expanded, setExpanded] = useState(false)
   const body = useRef<HTMLDivElement>(null)
 
@@ -32,6 +34,30 @@ export default function SidePanel({ title, scrollKey, onClose, children }: Props
   return (
     <aside className={`side-panel${expanded ? ' expanded' : ''}`} aria-label={title}>
       <header className="side-panel-header">
+        {nav && (
+          <div className="panel-nav">
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={nav.onBack}
+              disabled={!nav.back}
+              title={nav.back ? `Back to ${nav.back}` : 'Back'}
+              aria-label={nav.back ? `Back to ${nav.back}` : 'Back'}
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={nav.onForward}
+              disabled={!nav.forward}
+              title={nav.forward ? `Forward to ${nav.forward}` : 'Forward'}
+              aria-label={nav.forward ? `Forward to ${nav.forward}` : 'Forward'}
+            >
+              ›
+            </button>
+          </div>
+        )}
         <h2>{title}</h2>
         <button
           type="button"

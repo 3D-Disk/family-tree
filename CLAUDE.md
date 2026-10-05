@@ -119,7 +119,9 @@ Run lint, test and build before every push.
 6. No Relations tray + search (**done**, as filters in the People list);
    focus-on-person (**done**: "Focus on tree" in Details + bar with
    generations up/down and "Show everyone")
-7. New Person Questionnaire (wizard)
+7. ~~New Person Questionnaire (wizard)~~ Skipped at the owner's request.
+   Instead: side panel back / forward buttons (`src/state/panelHistory.ts`,
+   browser-style history of the last 50 people opened). **Done.**
 8. Views (drag to reorder, save/select; re-add the header Views dropdown)
 9. Free-placement toggle for views
 10. Later: GEDCOM, sharing/accounts, print/export image
