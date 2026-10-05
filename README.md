@@ -30,6 +30,10 @@ Safari and Firefox download a new, dated copy each time you save instead.
   Relatives, Life events, Burial, Notable details and Links, with a menu to
   jump between them. Click **Edit details** to change anything, or
   **Delete person** to remove them.
+- **Focus on one person:** in their Details, click **Focus on tree** to show
+  only their ancestors, descendants, partners and brothers & sisters. Use the
+  bar at the top to limit generations up or down, or **Show everyone** to go
+  back to the whole tree.
 - **Photos:** in Edit details, use **+ Add photos** in the Photo gallery to
   add several pictures with captions and dates. Click a photo in the Details
   view to see it full size and step through the rest with the arrows. Hover over a card for quick

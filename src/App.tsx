@@ -7,7 +7,8 @@ import PersonForm from './components/PersonForm.tsx'
 import SidePanel from './components/SidePanel.tsx'
 import StartScreen from './components/StartScreen.tsx'
 import type { AddKind } from './components/family/FamilySection.tsx'
-import TreeView from './components/tree/TreeView.tsx'
+import FocusBar from './components/tree/FocusBar.tsx'
+import TreeView, { type TreeFocus } from './components/tree/TreeView.tsx'
 import { isFiltering, matchPeople, sortPeople, type PeopleSort } from './model/filters.ts'
 import { emptyPerson, fullName } from './model/person.ts'
 import type { Person } from './model/types.ts'
@@ -39,6 +40,8 @@ export default function App() {
   /** Ask the tree to centre on someone. */
   const [focus, setFocus] = useState<{ id: string; n: number } | null>(null)
   const focusOn = (id: string) => setFocus({ id, n: Date.now() })
+  /** "Focus on a person": show only their line of the family. */
+  const [treeFocusState, setTreeFocus] = useState<TreeFocus | null>(null)
 
   const closePanel = useCallback(() => {
     setEditing(null)
@@ -112,6 +115,9 @@ export default function App() {
   /** The person shown in the panel (in view mode always the latest saved version). */
   const panelPerson = editing ? (editing.mode === 'edit' ? editing.person : state.tree.people[editing.person.id]) : undefined
 
+  // Drop the focus if that person has been deleted.
+  const treeFocus = treeFocusState && state.tree.people[treeFocusState.personId] ? treeFocusState : null
+
   const matches = listOpen ? sortPeople(matchPeople(state.tree, query, filterKeys), sort) : []
   const highlightIds = listOpen && isFiltering(query, filterKeys) ? new Set(matches.map((p) => p.id)) : null
 
@@ -156,15 +162,26 @@ export default function App() {
           />
         )}
         <main className="canvas tree-canvas">
-          <TreeView
-            key={state.opened}
-            highlightIds={highlightIds}
-            selectedId={editing?.person.id ?? null}
-            onSelect={selectPerson}
-            onAddRelative={addRelative}
-            onAdd={addPerson}
-            focus={focus}
-          />
+          {treeFocus && (
+            <FocusBar
+              name={fullName(state.tree.people[treeFocus.personId])}
+              options={treeFocus}
+              onChange={(o) => setTreeFocus({ ...treeFocus, ...o })}
+              onExit={() => setTreeFocus(null)}
+            />
+          )}
+          <div className="tree-area">
+            <TreeView
+              key={`${state.opened}:${treeFocus ? `${treeFocus.personId}:${treeFocus.up}:${treeFocus.down}` : 'all'}`}
+              treeFocus={treeFocus}
+              highlightIds={highlightIds}
+              selectedId={editing?.person.id ?? null}
+              onSelect={selectPerson}
+              onAddRelative={addRelative}
+              onAdd={addPerson}
+              focus={focus}
+            />
+          </div>
         </main>
       </div>
       {panelPerson && editing && (
@@ -178,6 +195,8 @@ export default function App() {
               personId={panelPerson.id}
               onEdit={() => editPerson(panelPerson.id)}
               onDeleted={closePanel}
+              onFocus={() => setTreeFocus({ personId: panelPerson.id, up: Infinity, down: Infinity })}
+              isFocused={treeFocus?.personId === panelPerson.id}
               onOpenPerson={(id) => {
                 selectPerson(id)
                 focusOn(id)

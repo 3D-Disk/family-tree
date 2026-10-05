@@ -453,6 +453,14 @@ kbd {
 .tree-canvas {
   padding: 0;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
 }
 
 .tree-canvas .react-flow {
@@ -519,6 +527,10 @@ kbd {
   outline-offset: 2px;
 }
 
+.tree-card.focused {
+  box-shadow: 0 0 0 3px var(--warn-text), 0 6px 18px rgb(0 0 0 / 0.14);
+}
+
 .tree-card.dimmed {
   opacity: 0.25;
 }
@@ -548,6 +560,38 @@ kbd {
 
 .tree-card.deceased .tree-card-dates::before {
   content: '✝ ';
+}
+
+/* Bar shown over the tree while focused on one person */
+.focus-bar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 16px;
+  padding: 8px 14px;
+  background: var(--warn-bg);
+  border-bottom: 1px solid var(--warn-text);
+  font-size: 0.9rem;
+}
+
+.focus-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.focus-select select {
+  padding: 3px 6px;
+}
+
+.focus-note {
+  flex-basis: 100%;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--warn-text);
 }
 
 /* Quick "add relative" buttons, shown under a card on hover or when it's open. */
@@ -1258,7 +1302,8 @@ select:focus {
 .timeline li::before {
   content: '';
   position: absolute;
-  left: -6px;
+  /* Centre the 10px dot on the 2px line: 4px list padding + 1px half-line + 5px half-dot. */
+  left: -10px;
   top: 11px;
   width: 10px;
   height: 10px;
@@ -1377,6 +1422,78 @@ select:focus {
   border: 1px solid var(--border);
   border-radius: 6px;
   background: #fff;
+}
+
+.events-editor {
+  align-items: stretch;
+}
+
+.events-toolbar {
+  display: flex;
+  gap: 14px;
+  font-size: 0.85rem;
+}
+
+.event-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.event-group-head {
+  align-self: flex-start;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.event-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.event-summary-open {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  border: 0;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-collapse {
+  width: 28px;
+  height: 28px;
+  font: inherit;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.list-item-head select {
+  margin-right: 4px;
+}
+
+.event-done {
+  font-size: 0.85rem;
 }
 
 .add-row {

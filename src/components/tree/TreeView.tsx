@@ -1,6 +1,7 @@
 import { Controls, MiniMap, ReactFlow, ReactFlowProvider, useReactFlow, type Node } from '@xyflow/react'
 import { useEffect, useMemo, useRef } from 'react'
 import { LAYOUT, layoutFamily } from '../../layout/familyLayout.ts'
+import { focusIds, subFamily, type FocusOptions } from '../../model/focus.ts'
 import { cardPhoto } from '../../model/person.ts'
 import { useTree } from '../../state/treeContext.ts'
 import type { AddKind } from '../family/FamilySection.tsx'
@@ -20,7 +21,11 @@ interface Props {
   onAdd(): void
   /** Centre the view on this person; `n` changes for each new request. */
   focus: { id: string; n: number } | null
+  /** Show only this person's line (ancestors, descendants, partners, siblings). */
+  treeFocus: TreeFocus | null
 }
+
+export type TreeFocus = FocusOptions & { personId: string }
 
 export default function TreeView(props: Props) {
   const { state } = useTree()
@@ -44,16 +49,17 @@ export default function TreeView(props: Props) {
   )
 }
 
-function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus }: Props) {
+function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus, treeFocus }: Props) {
   const { state } = useTree()
   const tree = state.tree!
   const { setCenter, getZoom } = useReactFlow()
 
   // Only the people and links affect where cards go.
-  const layout = useMemo(
-    () => layoutFamily({ people: tree.people, parentLinks: tree.parentLinks, partnerships: tree.partnerships }),
-    [tree.people, tree.parentLinks, tree.partnerships],
-  )
+  const layout = useMemo(() => {
+    const all = { people: tree.people, parentLinks: tree.parentLinks, partnerships: tree.partnerships }
+    if (!treeFocus) return layoutFamily(all)
+    return layoutFamily(subFamily(all, focusIds(all, treeFocus.personId, treeFocus)))
+  }, [tree.people, tree.parentLinks, tree.partnerships, treeFocus])
 
   const nodes = useMemo(() => {
     const { minX, minY, maxX, maxY } = layout.bounds
@@ -83,6 +89,7 @@ function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus }: Prop
         person: tree.people[p.id],
         photo: cardPhoto(tree.people[p.id], state.photos),
         selected: p.id === selectedId,
+        focused: p.id === treeFocus?.personId,
         dimmed: highlightIds !== null && !highlightIds.has(p.id),
         onAdd: onAddRelative,
       },
@@ -100,7 +107,7 @@ function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus }: Prop
         ]
       : []
     return [lines, ...label, ...cards] as Node[]
-  }, [layout, tree.people, state.photos, selectedId, highlightIds, onAddRelative])
+  }, [layout, tree.people, state.photos, selectedId, highlightIds, onAddRelative, treeFocus])
 
   // Centre on a person when asked (e.g. picked from the People list).
   const latestLayout = useRef(layout)
