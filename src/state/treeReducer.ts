@@ -1,7 +1,7 @@
 import type { PhotoCrop } from '../model/photoCrop.ts'
 import { photoIdsOf } from '../model/person.ts'
 import { removePerson } from '../model/relationships.ts'
-import type { Family, Person, PhotoStore, TreeData } from '../model/types.ts'
+import type { Family, Person, PhotoStore, TreeData, TreeViewDef } from '../model/types.ts'
 
 /** A new or re-framed profile photo: the original plus the small framed card image. */
 export interface PhotoUpdate {
@@ -58,6 +58,9 @@ export type TreeAction =
    */
   | { type: 'savePerson'; person: Person; photo?: PhotoUpdate | null; family?: Family; newPhotos?: PhotoStore }
   | { type: 'deletePerson'; id: string }
+  /** Add a view, or replace the one with the same id. */
+  | { type: 'saveView'; view: TreeViewDef }
+  | { type: 'deleteView'; id: string }
   /** `revision` is the state's revision when the save started. */
   | { type: 'saved'; fileName: string; fileHandle: FileSystemFileHandle | null; revision: number }
 
@@ -80,7 +83,7 @@ function reduce(state: TreeState, action: TreeAction): TreeState {
     case 'newTree':
       return {
         ...initialState,
-        tree: { name: action.name, people: {}, parentLinks: {}, partnerships: {} },
+        tree: { name: action.name, people: {}, parentLinks: {}, partnerships: {}, views: [] },
         dirty: true,
         revision: state.revision,
         opened: state.opened + 1,
@@ -145,6 +148,19 @@ function reduce(state: TreeState, action: TreeAction): TreeState {
         dirty: true,
       }
     }
+
+    case 'saveView': {
+      if (!state.tree) return state
+      const exists = state.tree.views.some((v) => v.id === action.view.id)
+      const views = exists
+        ? state.tree.views.map((v) => (v.id === action.view.id ? action.view : v))
+        : [...state.tree.views, action.view]
+      return { ...state, tree: { ...state.tree, views }, dirty: true }
+    }
+
+    case 'deleteView':
+      if (!state.tree) return state
+      return { ...state, tree: { ...state.tree, views: state.tree.views.filter((v) => v.id !== action.id) }, dirty: true }
 
     case 'saved':
       return {

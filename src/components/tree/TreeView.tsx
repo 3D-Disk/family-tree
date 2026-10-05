@@ -1,6 +1,8 @@
 import { Controls, MiniMap, ReactFlow, ReactFlowProvider, useReactFlow, type Node } from '@xyflow/react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { LAYOUT, layoutFamily } from '../../layout/familyLayout.ts'
+import { emptyViewOrder, reorderByDrop } from '../../layout/viewEdits.ts'
+import type { ViewOrder } from '../../model/types.ts'
 import { focusIds, subFamily, type FocusOptions } from '../../model/focus.ts'
 import { cardPhoto } from '../../model/person.ts'
 import { useTree } from '../../state/treeContext.ts'
@@ -23,6 +25,10 @@ interface Props {
   focus: { id: string; n: number } | null
   /** Show only this person's line (ancestors, descendants, partners, siblings). */
   treeFocus: TreeFocus | null
+  /** The saved view being shown (null = Default). */
+  view: ViewOrder | null
+  /** A card was dragged to a new place: the view's order with that change. */
+  onReorder(next: ViewOrder): void
 }
 
 export type TreeFocus = FocusOptions & { personId: string }
@@ -49,7 +55,7 @@ export default function TreeView(props: Props) {
   )
 }
 
-function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus, treeFocus }: Props) {
+function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus, treeFocus, view, onReorder }: Props) {
   const { state } = useTree()
   const tree = state.tree!
   const { setCenter, getZoom } = useReactFlow()
@@ -57,9 +63,12 @@ function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus, treeFo
   // Only the people and links affect where cards go.
   const layout = useMemo(() => {
     const all = { people: tree.people, parentLinks: tree.parentLinks, partnerships: tree.partnerships }
-    if (!treeFocus) return layoutFamily(all)
-    return layoutFamily(subFamily(all, focusIds(all, treeFocus.personId, treeFocus)))
-  }, [tree.people, tree.parentLinks, tree.partnerships, treeFocus])
+    const shown = treeFocus ? subFamily(all, focusIds(all, treeFocus.personId, treeFocus)) : all
+    return layoutFamily(shown, LAYOUT, view ?? undefined)
+  }, [tree.people, tree.parentLinks, tree.partnerships, treeFocus, view])
+
+  /** The card being dragged, and its current x (it only moves sideways). */
+  const [drag, setDrag] = useState<{ id: string; x: number } | null>(null)
 
   const nodes = useMemo(() => {
     const { minX, minY, maxX, maxY } = layout.bounds
@@ -75,16 +84,18 @@ function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus, treeFo
         originY: minY - PAD,
       },
       selectable: false,
+      draggable: false,
       focusable: false,
       zIndex: 0,
     }
     const cards: TreeCardNode[] = Object.values(layout.people).map((p) => ({
       id: p.id,
       type: 'person',
-      position: { x: p.x, y: p.y },
+      position: { x: drag?.id === p.id ? drag.x : p.x, y: p.y },
       width: LAYOUT.cardWidth,
       height: LAYOUT.cardHeight,
-      zIndex: 1,
+      zIndex: drag?.id === p.id ? 20 : 1,
+      draggable: true,
       data: {
         person: tree.people[p.id],
         photo: cardPhoto(tree.people[p.id], state.photos),
@@ -102,12 +113,13 @@ function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus, treeFo
             position: layout.unlinkedLabel,
             data: { text: 'Not linked to anyone', hint: 'Open someone to add their family.' },
             selectable: false,
+      draggable: false,
             focusable: false,
           },
         ]
       : []
     return [lines, ...label, ...cards] as Node[]
-  }, [layout, tree.people, state.photos, selectedId, highlightIds, onAddRelative, treeFocus])
+  }, [layout, tree.people, state.photos, selectedId, highlightIds, onAddRelative, treeFocus, drag])
 
   // Centre on a person when asked (e.g. picked from the People list).
   const latestLayout = useRef(layout)
@@ -131,7 +143,20 @@ function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus, treeFo
       edges={[]}
       nodeTypes={nodeTypes}
       onNodeClick={(_, node) => node.type === 'person' && onSelect(node.id)}
-      nodesDraggable={false}
+      // Cards can be dragged sideways to rearrange them (saved as a view).
+      nodesDraggable
+      nodeDragThreshold={5}
+      onNodesChange={(changes) => {
+        for (const c of changes) {
+          if (c.type === 'position' && c.dragging && c.position) setDrag({ id: c.id, x: c.position.x })
+        }
+      }}
+      onNodeDragStop={(_, node) => {
+        const x = drag?.id === node.id ? drag.x : node.position.x
+        setDrag(null)
+        const next = reorderByDrop(layout, view ?? emptyViewOrder(), node.id, x + LAYOUT.cardWidth / 2)
+        if (next) onReorder(next)
+      }}
       nodesConnectable={false}
       elementsSelectable={false}
       minZoom={0.1}

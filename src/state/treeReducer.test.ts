@@ -17,7 +17,7 @@ const photo = (id: string, crop = DEFAULT_CROP): PhotoUpdate => ({
 describe('treeReducer', () => {
   it('starts a new, unsaved tree', () => {
     const s = started()
-    expect(s.tree).toEqual({ name: 'Lee Family', people: {}, parentLinks: {}, partnerships: {} })
+    expect(s.tree).toEqual({ name: 'Lee Family', people: {}, parentLinks: {}, partnerships: {}, views: [] })
     expect(s.dirty).toBe(true)
   })
 
@@ -103,6 +103,17 @@ describe('treeReducer', () => {
     s = treeReducer(s, { type: 'deletePerson', id: person.id })
     expect(s.tree!.people).toEqual({})
     expect(s.photos).toEqual({})
+  })
+
+  it('adds, updates and deletes views', () => {
+    const v = { id: 'v', name: 'Mine', siblingOrder: {}, chainOrder: {} }
+    let s = treeReducer({ ...started(), dirty: false }, { type: 'saveView', view: v })
+    expect(s.tree!.views).toEqual([v])
+    expect(s.dirty).toBe(true)
+    s = treeReducer(s, { type: 'saveView', view: { ...v, name: 'Renamed' } })
+    expect(s.tree!.views.map((x) => x.name)).toEqual(['Renamed'])
+    s = treeReducer(s, { type: 'deleteView', id: 'v' })
+    expect(s.tree!.views).toEqual([])
   })
 
   it('clears the unsaved flag after saving', () => {

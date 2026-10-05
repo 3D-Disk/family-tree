@@ -30,6 +30,10 @@ Safari and Firefox download a new, dated copy each time you save instead.
   Relatives, Life events, Burial, Notable details and Links, with a menu to
   jump between them. Click **Edit details** to change anything, or
   **Delete person** to remove them.
+- **Views:** drag a card left or right to rearrange brothers & sisters or
+  swap a couple's sides. The first time, you're asked to save it as a new
+  **View** (the Default view always stays automatic). Switch, rename or
+  delete views from the **View** menu at the top.
 - **Back / forward:** the ‹ › buttons at the top left of the side panel step
   back and forward through the people you've opened, like a web browser.
 - **Focus on one person:** in their Details, click **Focus on tree** to show

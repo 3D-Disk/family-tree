@@ -155,7 +155,7 @@ describe('positions', () => {
   })
 
   it('handles an empty tree', () => {
-    expect(layoutFamily(family([]))).toMatchObject({ people: {}, lines: [], unlinkedLabel: null })
+    expect(layoutFamily(family([]))).toMatchObject({ people: {}, lines: [], unlinkedLabel: null, chains: [], siblingGroups: [] })
   })
 })
 

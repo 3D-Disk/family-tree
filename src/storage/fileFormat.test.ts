@@ -9,7 +9,7 @@ describe('.familytree files', () => {
     const person = { ...emptyPerson(), firstName: 'Ann', photoId: 'ph1' }
     const kid = { ...emptyPerson(), firstName: 'Kid' }
     const tree = addPartnership(
-      addParentLink({ name: 'Lee Family', people: { [person.id]: person, [kid.id]: kid }, parentLinks: {}, partnerships: {} }, person.id, kid.id, 'adoptive'),
+      addParentLink({ name: 'Lee Family', people: { [person.id]: person, [kid.id]: kid }, parentLinks: {}, partnerships: {}, views: [] }, person.id, kid.id, 'adoptive'),
       person.id, kid.id,
     )
     const photo = new Blob([new Uint8Array([1, 2, 3])], { type: 'image/jpeg' })
@@ -28,7 +28,7 @@ describe('.familytree files', () => {
       ...emptyPerson(),
       gallery: [{ id: 'g1', photoId: 'full1', thumbId: 'thumb1', caption: 'Wedding day', date: 'Jun 1950' }],
     }
-    const tree = { name: 'x', people: { [person.id]: person }, parentLinks: {}, partnerships: {} }
+    const tree = { name: 'x', people: { [person.id]: person }, parentLinks: {}, partnerships: {}, views: [] }
     const photos = {
       full1: new Blob([new Uint8Array([9, 9])], { type: 'image/jpeg' }),
       thumb1: new Blob([new Uint8Array([7])], { type: 'image/jpeg' }),
@@ -46,6 +46,15 @@ describe('.familytree files', () => {
     expect(loaded.tree.people.x.burial).toEqual({ cemetery: '', place: '', plot: '', date: '', notes: '' })
     expect(loaded.tree.parentLinks).toEqual({})
     expect(loaded.tree.partnerships).toEqual({})
+    expect(loaded.tree.views).toEqual([])
+  })
+
+  it('keeps views, dropping people who no longer exist', async () => {
+    const a = { ...emptyPerson(), id: 'a' }
+    const view = { id: 'v1', name: 'By gender', siblingOrder: { 'p+q': ['a', 'ghost'] }, chainOrder: { 'a+b': ['b', 'a'] } }
+    const tree = { name: 'x', people: { a }, parentLinks: {}, partnerships: {}, views: [view] }
+    const loaded = await readTreeFile(await writeTreeFile(tree, {}))
+    expect(loaded.tree.views).toEqual([{ ...view, siblingOrder: { 'p+q': ['a'] }, chainOrder: { 'a+b': ['a'] } }])
   })
 
   it('drops links to people who are missing from the file', async () => {

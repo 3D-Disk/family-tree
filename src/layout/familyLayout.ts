@@ -13,7 +13,7 @@
 // → assign x positions → draw lines. Everything here is pure and testable.
 
 import { dateSortKey } from '../model/dates.ts'
-import type { Family, ParentLink, ParentType, Partnership } from '../model/types.ts'
+import type { Family, ParentLink, ParentType, Partnership, ViewOrder } from '../model/types.ts'
 
 export const LAYOUT = {
   cardWidth: 168,
@@ -47,6 +47,10 @@ export interface TreeLine {
 
 export interface TreeLayout {
   people: Record<string, PlacedPerson>
+  /** Partners kept side by side, left to right (one entry per row group, including single people). */
+  chains: string[][]
+  /** Brothers & sisters drawn together under their parents: one person per chain, left to right. */
+  siblingGroups: { key: string; ids: string[] }[]
   lines: TreeLine[]
   /** Where to put the "Not linked to anyone" heading, if there are such people. */
   unlinkedLabel: { x: number; y: number } | null
@@ -72,7 +76,22 @@ interface FamilyUnit {
   children: string[]
 }
 
-export function layoutFamily(f: Family, L = LAYOUT): TreeLayout {
+/** Key for a group of people (e.g. a couple): their ids sorted and joined. */
+export const groupKeyOf = (ids: string[]) => [...ids].sort().join('+')
+
+/**
+ * Apply a saved order to a default order: the people listed in `preferred`
+ * take the same slots they had, in the preferred order; everyone else (e.g.
+ * people added later) keeps their default spot.
+ */
+export function applyOrder(defaultOrder: string[], preferred: string[] | undefined): string[] {
+  if (!preferred?.length) return defaultOrder
+  const listed = new Set(defaultOrder.filter((id) => preferred.includes(id)))
+  const queue = preferred.filter((id) => listed.has(id))
+  return defaultOrder.map((id) => (listed.has(id) ? queue.shift()! : id))
+}
+
+export function layoutFamily(f: Family, L = LAYOUT, view?: ViewOrder): TreeLayout {
   const people = Object.values(f.people)
   const added = new Map(
     [...people].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map((p, i) => [p.id, i]),
@@ -103,7 +122,7 @@ export function layoutFamily(f: Family, L = LAYOUT): TreeLayout {
     const primary = primaryLinks(p.id)
     if (!primary.length) continue
     const parents = primary.map((l) => l.parentId).sort()
-    const key = parents.join('+')
+    const key = groupKeyOf(parents)
     familyKeyOf.set(p.id, key)
     if (!families.has(key)) families.set(key, { key, parents, children: [] })
     families.get(key)!.children.push(p.id)
@@ -155,6 +174,8 @@ export function layoutFamily(f: Family, L = LAYOUT): TreeLayout {
   }
 
   const placed: Record<string, PlacedPerson> = {}
+  const allChains: string[][] = []
+  const siblingGroups: TreeLayout['siblingGroups'] = []
   const lines: TreeLine[] = []
   let cursorX = 0
   const unlinked: string[] = []
@@ -207,7 +228,7 @@ export function layoutFamily(f: Family, L = LAYOUT): TreeLayout {
       }
     : { minX: 0, minY: 0, maxX: 0, maxY: 0 }
 
-  return { people: placed, lines, unlinkedLabel, bounds }
+  return { people: placed, chains: allChains, siblingGroups, lines, unlinkedLabel, bounds }
 
   // ---------------------------------------------------------------------------
 
@@ -296,6 +317,13 @@ export function layoutFamily(f: Family, L = LAYOUT): TreeLayout {
       }
       const scored = [...groups.values()].map((cs, i) => {
         cs.sort((a, b) => byBirth(groupBirth(a), groupBirth(b)))
+        // A saved view can change the order of brothers & sisters.
+        const preferred = view?.siblingOrder[cs[0].group]
+        if (preferred && families.has(cs[0].group)) {
+          const byRep = new Map(cs.map((c) => [groupBirth(c), c]))
+          const order = applyOrder([...byRep.keys()], preferred)
+          cs.splice(0, cs.length, ...order.map((id) => byRep.get(id)!))
+        }
         const keys = cs.map(key).filter((k): k is number => k !== null)
         return { cs, i, k: keys.length ? avg(keys) : avg(cs.map((c) => pos.get(c)! + c.width / 2)) }
       })
@@ -360,6 +388,19 @@ export function layoutFamily(f: Family, L = LAYOUT): TreeLayout {
       for (let g = maxGen - 1; g >= 0; g--) upPass(g)
     }
 
+    // Record the final arrangement so a drag can be turned into a new order.
+    for (const row of rows) {
+      for (const c of row) allChains.push(c.members)
+      for (let i = 0; i < row.length; ) {
+        let j = i
+        while (j + 1 < row.length && row[j + 1].group === row[i].group) j++
+        if (families.has(row[i].group)) {
+          siblingGroups.push({ key: row[i].group, ids: row.slice(i, j + 1).map(groupBirth) })
+        }
+        i = j + 1
+      }
+    }
+
     const result = new Map<string, number>()
     for (const id of comp) result.set(id, center(id) - L.cardWidth / 2)
     return result
@@ -378,6 +419,10 @@ export function layoutFamily(f: Family, L = LAYOUT): TreeLayout {
 
   /** Order partners left → right using the couple rules. */
   function orderChain(members: string[], g: number): string[] {
+    return applyOrder(defaultChainOrder(members, g), view?.chainOrder[groupKeyOf(members)])
+  }
+
+  function defaultChainOrder(members: string[], g: number): string[] {
     if (members.length === 1) return members
     if (members.length === 2) return orderCouple(members[0], members[1])
     // Several partners: the person with the most partners sits in the middle,

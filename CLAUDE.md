@@ -38,7 +38,7 @@ Single user for now; sharing/accounts are a future phase.
 - React + TypeScript + Vite; static site deployed to GitHub Pages from `main`
   via `.github/workflows/deploy.yml`. `base: './'` in `vite.config.ts`.
 - Dexie (IndexedDB auto-save), JSZip (save file), React Flow (`@xyflow/react`)
-  for the tree canvas (pan/zoom/minimap only; cards aren't draggable yet).
+  for the tree canvas (pan/zoom/minimap; cards drag sideways only, to edit views).
 - Folders:
   - `src/model/`: types, date parsing (`dates.ts`), person helpers,
     `relationships.ts` (lookups, rules like "no loops / max 2 biological
@@ -59,7 +59,11 @@ Single user for now; sharing/accounts are a future phase.
     partner "chains" per row → sibling groups ordered under parents via
     barycentre sweeps → x positions by alternating least-squares passes
     (`isotonicPlace`) → lines). Returns card positions + line polylines.
-    Views (Phase 8) should feed overrides into this, not replace it.
+    `layoutFamily(f, L, view)` takes a view's `siblingOrder` / `chainOrder`
+    and applies them with `applyOrder` (listed people take the same slots in
+    the saved order; people added later keep their default spot). It also
+    returns `chains` and `siblingGroups` so `layout/viewEdits.ts`
+    (`reorderByDrop`) can turn a sideways drag into a new order.
   - `src/components/tree/`: `TreeView` renders the layout with React Flow
     (cards = nodes, all lines = one SVG node behind them); `TreeCard` has the
     hover "+ Parent/Partner/Child/Sibling" buttons, which open the person's
@@ -88,7 +92,11 @@ Single user for now; sharing/accounts are a future phase.
   validates instead.
 - Life events in the edit form are grouped by type and collapsible
   (`EventsEditor`); collapse state is UI-only, never saved.
-- The header's Views dropdown was removed until Phase 8 adds Views.
+- Views: `TreeData.views` (saved in the file; `normalizeTree` cleans them).
+  The selected view is UI state in `App.tsx` and resets when a file is
+  opened. Header select = Default / saved views / New / Rename / Delete;
+  `ViewBar` (with Reset) shows above the tree in a saved view. Dragging in
+  Default offers "Save as a new view?" (`PromptDialog`).
 - Family links are edited in `components/family/FamilySection.tsx` inside the
   person form, on a draft copy of the family; `savePerson` with `family`
   commits the person and links together. Adding a sibling to someone with no
@@ -122,6 +130,7 @@ Run lint, test and build before every push.
 7. ~~New Person Questionnaire (wizard)~~ Skipped at the owner's request.
    Instead: side panel back / forward buttons (`src/state/panelHistory.ts`,
    browser-style history of the last 50 people opened). **Done.**
-8. Views (drag to reorder, save/select; re-add the header Views dropdown)
+8. Views (drag sideways to reorder siblings / couple sides, save, switch,
+   rename, delete, reset). **Done.**
 9. Free-placement toggle for views
 10. Later: GEDCOM, sharing/accounts, print/export image
