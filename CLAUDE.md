@@ -83,6 +83,11 @@ Single user for now; sharing/accounts are a future phase.
   between people or between profile and gallery ("Make profile photo" copies).
 - `PhotoViewer` takes a list of photos (arrows/← → keys, captions, counter).
 - Deleting a person goes through `DeletePersonButton` (Details and form).
+- The fallback file picker (Safari/iPhone/Firefox) has no `accept` filter on
+  purpose: iOS greys out unknown types like `.familytree`. `readTreeFile`
+  validates instead.
+- Life events in the edit form are grouped by type and collapsible
+  (`EventsEditor`); collapse state is UI-only, never saved.
 - The header's Views dropdown was removed until Phase 8 adds Views.
 - Family links are edited in `components/family/FamilySection.tsx` inside the
   person form, on a draft copy of the family; `savePerson` with `family`

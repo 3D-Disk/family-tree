@@ -39,7 +39,9 @@ export async function pickTreeFile(): Promise<{ file: File; handle: FileSystemFi
   return new Promise((resolve) => {
     const input = document.createElement('input')
     input.type = 'file'
-    input.accept = `${FILE_EXTENSION},application/zip,${FILE_MIME}`
+    // No `accept` filter on purpose: iPhones/iPads grey out file types they don't
+    // recognise (like .familytree), so they could never be picked. readTreeFile
+    // checks the file instead and explains if it isn't a family tree.
     input.addEventListener('change', () => {
       const file = input.files?.[0]
       resolve(file ? { file, handle: null } : null)

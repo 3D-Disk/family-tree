@@ -1302,7 +1302,8 @@ select:focus {
 .timeline li::before {
   content: '';
   position: absolute;
-  left: -6px;
+  /* Centre the 10px dot on the 2px line: 4px list padding + 1px half-line + 5px half-dot. */
+  left: -10px;
   top: 11px;
   width: 10px;
   height: 10px;
@@ -1421,6 +1422,78 @@ select:focus {
   border: 1px solid var(--border);
   border-radius: 6px;
   background: #fff;
+}
+
+.events-editor {
+  align-items: stretch;
+}
+
+.events-toolbar {
+  display: flex;
+  gap: 14px;
+  font-size: 0.85rem;
+}
+
+.event-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.event-group-head {
+  align-self: flex-start;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.event-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.event-summary-open {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  border: 0;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-collapse {
+  width: 28px;
+  height: 28px;
+  font: inherit;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.list-item-head select {
+  margin-right: 4px;
+}
+
+.event-done {
+  font-size: 0.85rem;
 }
 
 .add-row {
