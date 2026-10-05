@@ -701,6 +701,23 @@ kbd {
   border-bottom: 1px solid var(--border);
 }
 
+.panel-nav {
+  display: flex;
+  margin-left: -8px;
+  margin-right: 4px;
+}
+
+.panel-nav .icon-btn {
+  font-size: 1.5rem;
+  line-height: 0.8;
+}
+
+.panel-nav .icon-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+  border-color: transparent;
+}
+
 .side-panel-header h2 {
   flex: 1;
   margin: 0;

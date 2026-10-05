@@ -12,6 +12,7 @@ import TreeView, { type TreeFocus } from './components/tree/TreeView.tsx'
 import { isFiltering, matchPeople, sortPeople, type PeopleSort } from './model/filters.ts'
 import { emptyPerson, fullName } from './model/person.ts'
 import type { Person } from './model/types.ts'
+import { emptyHistory, step, visit, type PanelHistory } from './state/panelHistory.ts'
 import { useTree } from './state/treeContext.ts'
 
 /** What the side panel shows: someone's details (view) or the edit form. */
@@ -42,6 +43,8 @@ export default function App() {
   const focusOn = (id: string) => setFocus({ id, n: Date.now() })
   /** "Focus on a person": show only their line of the family. */
   const [treeFocusState, setTreeFocus] = useState<TreeFocus | null>(null)
+  /** People opened in the side panel, for its back / forward buttons. */
+  const [history, setHistory] = useState<PanelHistory>(emptyHistory)
 
   const closePanel = useCallback(() => {
     setEditing(null)
@@ -93,6 +96,22 @@ export default function App() {
   const open = (next: Editing) => {
     setFormDirty(false)
     setEditing(next)
+    // Remember who was opened, for the panel's back / forward buttons.
+    if (next && !next.isNew) setHistory((h) => visit(h, next.person.id))
+  }
+  const exists = (id: string) => id in state.tree!.people
+  const backTo = step(history, -1, exists)
+  const forwardTo = step(history, 1, exists)
+  /** Go back (-1) or forward (+1) through the people opened in the panel. */
+  const goHistory = (to: number) => {
+    if (to < 0) return
+    const id = history.stack[to]
+    requestLeave(() => {
+      setFormDirty(false)
+      setEditing({ person: state.tree!.people[id], isNew: false, mode: 'view' })
+      setHistory((h) => ({ ...h, index: to }))
+      focusOn(id)
+    })
   }
   const addPerson = () => requestLeave(() => open({ person: emptyPerson(), isNew: true, mode: 'edit' }))
   /** Show someone's details (staying put if they're already open). */
@@ -186,6 +205,12 @@ export default function App() {
       </div>
       {panelPerson && editing && (
         <SidePanel
+          nav={{
+            back: backTo >= 0 ? fullName(state.tree.people[history.stack[backTo]]) : null,
+            forward: forwardTo >= 0 ? fullName(state.tree.people[history.stack[forwardTo]]) : null,
+            onBack: () => goHistory(backTo),
+            onForward: () => goHistory(forwardTo),
+          }}
           title={editing.mode === 'view' ? fullName(panelPerson) : editing.isNew ? 'Add a person' : `Edit ${fullName(panelPerson)}`}
           scrollKey={`${panelPerson.id}:${editing.mode}`}
           onClose={leavePanel}
