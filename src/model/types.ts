@@ -124,9 +124,26 @@ export interface Family {
   partnerships: Record<string, Partnership>
 }
 
+/**
+ * A saved arrangement of the tree. It stores reorderings only; the automatic
+ * layout still does everything else.
+ */
+export interface ViewOrder {
+  /** Family key (parent ids, sorted, joined with "+") → children in the chosen order. */
+  siblingOrder: Record<string, string[]>
+  /** Couple/partner chain key (member ids, sorted, joined with "+") → left-to-right order. */
+  chainOrder: Record<string, string[]>
+}
+
+export interface TreeViewDef extends ViewOrder {
+  id: string
+  name: string
+}
+
 /** Everything saved in a .familytree file except the photo files themselves. */
 export interface TreeData extends Family {
   name: string
+  views: TreeViewDef[]
 }
 
 /** Photo blobs keyed by photo id. */

@@ -4,7 +4,7 @@
 // Keeping it as ordinary JSON + images means the data is never locked in.
 
 import JSZip from 'jszip'
-import type { PhotoStore, TreeData } from '../model/types.ts'
+import type { PhotoStore, TreeData, TreeViewDef } from '../model/types.ts'
 import { emptyPerson } from '../model/person.ts'
 import { withoutDanglingLinks } from '../model/relationships.ts'
 
@@ -82,5 +82,19 @@ export function normalizeTree(tree: Partial<TreeData>): TreeData {
     Object.entries(tree.people ?? {}).map(([id, p]) => [id, { ...emptyPerson(), ...p, id }]),
   )
   const family = withoutDanglingLinks({ people, parentLinks: tree.parentLinks ?? {}, partnerships: tree.partnerships ?? {} })
-  return { ...tree, name: tree.name ?? 'My family tree', ...family }
+  return { ...tree, name: tree.name ?? 'My family tree', ...family, views: cleanViews(tree.views, family.people) }
+}
+
+/** Keep only well-formed views, and forget people who no longer exist. */
+function cleanViews(views: unknown, people: Record<string, unknown>): TreeViewDef[] {
+  if (!Array.isArray(views)) return []
+  const clean = (orders: unknown) =>
+    Object.fromEntries(
+      Object.entries((orders ?? {}) as Record<string, unknown>)
+        .filter(([, ids]) => Array.isArray(ids))
+        .map(([key, ids]) => [key, (ids as string[]).filter((id) => id in people)]),
+    )
+  return views
+    .filter((v): v is TreeViewDef => !!v && typeof v.id === 'string')
+    .map((v) => ({ id: v.id, name: String(v.name ?? 'View'), siblingOrder: clean(v.siblingOrder), chainOrder: clean(v.chainOrder) }))
 }

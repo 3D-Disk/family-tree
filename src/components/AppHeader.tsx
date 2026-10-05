@@ -11,9 +11,19 @@ interface Props {
   onFilterClick(): void
   /** Runs a file action once any unsaved edits in the side panel are dealt with. */
   beforeFileAction(action: () => void): void
+  /** Saved views and the one shown (null = Default). */
+  views: { id: string; name: string }[]
+  activeViewId: string | null
+  onViewAction(action: ViewAction): void
 }
 
-export default function AppHeader({ onAddPerson, beforeFileAction, query, onQueryChange, filterCount, onFilterClick }: Props) {
+export type ViewAction =
+  | { type: 'select'; id: string | null }
+  | { type: 'new' }
+  | { type: 'rename' }
+  | { type: 'delete' }
+
+export default function AppHeader({ onAddPerson, beforeFileAction, query, onQueryChange, filterCount, onFilterClick, views, activeViewId, onViewAction }: Props) {
   const { state, dispatch, save, saveAs, openFile, close, confirmDiscard } = useTree()
   const menu = useRef<HTMLDetailsElement>(null)
   const tree = state.tree!
@@ -62,6 +72,31 @@ export default function AppHeader({ onAddPerson, beforeFileAction, query, onQuer
         <button type="button" className={`btn save-btn${state.dirty ? ' btn-attention' : ''}`} onClick={save}>
           Save
         </button>
+
+        <label className="views-select">
+          <span>View</span>
+          <select
+            aria-label="Choose a view"
+            value={activeViewId ?? 'default'}
+            onChange={(e) => {
+              const v = e.target.value
+              if (v === 'default') onViewAction({ type: 'select', id: null })
+              else if (v === '__new') onViewAction({ type: 'new' })
+              else if (v === '__rename') onViewAction({ type: 'rename' })
+              else if (v === '__delete') onViewAction({ type: 'delete' })
+              else onViewAction({ type: 'select', id: v })
+            }}
+          >
+            <option value="default">Default (automatic)</option>
+            {views.map((v) => (
+              <option key={v.id} value={v.id}>{v.name}</option>
+            ))}
+            <option disabled>──────────</option>
+            <option value="__new">＋ New view…</option>
+            {activeViewId && <option value="__rename">Rename view…</option>}
+            {activeViewId && <option value="__delete">Delete view…</option>}
+          </select>
+        </label>
 
         <input
           className="search"

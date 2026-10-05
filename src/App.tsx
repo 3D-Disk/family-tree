@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import AppHeader from './components/AppHeader.tsx'
+import AppHeader, { type ViewAction } from './components/AppHeader.tsx'
+import PromptDialog from './components/PromptDialog.tsx'
+import ViewBar from './components/tree/ViewBar.tsx'
 import ConfirmDialog from './components/ConfirmDialog.tsx'
 import PeopleList from './components/PeopleList.tsx'
 import PersonDetails from './components/PersonDetails.tsx'
@@ -10,7 +12,8 @@ import type { AddKind } from './components/family/FamilySection.tsx'
 import FocusBar from './components/tree/FocusBar.tsx'
 import TreeView, { type TreeFocus } from './components/tree/TreeView.tsx'
 import { isFiltering, matchPeople, sortPeople, type PeopleSort } from './model/filters.ts'
-import { emptyPerson, fullName } from './model/person.ts'
+import { emptyPerson, fullName, newId } from './model/person.ts'
+import type { ViewOrder } from './model/types.ts'
 import type { Person } from './model/types.ts'
 import { emptyHistory, step, visit, type PanelHistory } from './state/panelHistory.ts'
 import { useTree } from './state/treeContext.ts'
@@ -25,7 +28,7 @@ type Editing = {
 type LeaveChoice = 'save' | 'discard' | 'stay'
 
 export default function App() {
-  const { state, save } = useTree()
+  const { state, save, dispatch } = useTree()
   const [editing, setEditing] = useState<Editing>(null)
   const [formDirty, setFormDirty] = useState(false)
   const saveForm = useRef<(() => void) | null>(null)
@@ -43,6 +46,14 @@ export default function App() {
   const focusOn = (id: string) => setFocus({ id, n: Date.now() })
   /** "Focus on a person": show only their line of the family. */
   const [treeFocusState, setTreeFocus] = useState<TreeFocus | null>(null)
+  /** The saved view shown on the tree (null = Default). Not saved; a new file starts on Default. */
+  const [chosenView, setChosenView] = useState<{ id: string | null; opened: number }>({ id: null, opened: 0 })
+  const activeViewId = chosenView.opened === state.opened ? chosenView.id : null
+  const setActiveViewId = (id: string | null) => setChosenView({ id, opened: state.opened })
+  /** A pop-up about views: naming a new one, renaming, deleting or resetting. */
+  const [viewDialog, setViewDialog] = useState<
+    { kind: 'new' | 'rename' | 'delete' | 'reset' } | { kind: 'saveAsNew'; order: ViewOrder } | null
+  >(null)
   /** People opened in the side panel, for its back / forward buttons. */
   const [history, setHistory] = useState<PanelHistory>(emptyHistory)
 
@@ -137,6 +148,17 @@ export default function App() {
   // Drop the focus if that person has been deleted.
   const treeFocus = treeFocusState && state.tree.people[treeFocusState.personId] ? treeFocusState : null
 
+  const activeView = state.tree.views.find((v) => v.id === activeViewId) ?? null
+  const onViewAction = (a: ViewAction) => {
+    if (a.type === 'select') setActiveViewId(a.id)
+    else setViewDialog({ kind: a.type })
+  }
+  const createView = (name: string, order: ViewOrder = { siblingOrder: {}, chainOrder: {} }) => {
+    const id = newId()
+    dispatch({ type: 'saveView', view: { id, name, ...order } })
+    setActiveViewId(id)
+  }
+
   const matches = listOpen ? sortPeople(matchPeople(state.tree, query, filterKeys), sort) : []
   const highlightIds = listOpen && isFiltering(query, filterKeys) ? new Set(matches.map((p) => p.id)) : null
 
@@ -145,6 +167,9 @@ export default function App() {
       <AppHeader
         onAddPerson={addPerson}
         beforeFileAction={beforeFileAction}
+        views={state.tree.views}
+        activeViewId={activeView?.id ?? null}
+        onViewAction={onViewAction}
         query={query}
         onQueryChange={(q) => {
           setQuery(q)
@@ -189,10 +214,17 @@ export default function App() {
               onExit={() => setTreeFocus(null)}
             />
           )}
+          {activeView && <ViewBar name={activeView.name} onReset={() => setViewDialog({ kind: 'reset' })} />}
           <div className="tree-area">
             <TreeView
               key={`${state.opened}:${treeFocus ? `${treeFocus.personId}:${treeFocus.up}:${treeFocus.down}` : 'all'}`}
               treeFocus={treeFocus}
+              view={activeView}
+              onReorder={(order) =>
+                activeView
+                  ? dispatch({ type: 'saveView', view: { ...activeView, ...order } })
+                  : setViewDialog({ kind: 'saveAsNew', order })
+              }
               highlightIds={highlightIds}
               selectedId={editing?.person.id ?? null}
               onSelect={selectPerson}
@@ -260,6 +292,81 @@ export default function App() {
           onChoose={onLeaveChoice}
         >
           You've made changes that haven't been saved.
+        </ConfirmDialog>
+      )}
+      {viewDialog?.kind === 'new' && (
+        <PromptDialog
+          title="New view"
+          label="Name"
+          initial={`View ${state.tree.views.length + 1}`}
+          confirmLabel="Create view"
+          onDone={(name) => {
+            setViewDialog(null)
+            if (name) createView(name)
+          }}
+        >
+          Starts like the Default view. Then drag cards left or right to rearrange them.
+        </PromptDialog>
+      )}
+      {viewDialog?.kind === 'saveAsNew' && (
+        <PromptDialog
+          title="Save as a new view?"
+          label="Name"
+          initial={`View ${state.tree.views.length + 1}`}
+          confirmLabel="Save view"
+          onDone={(name) => {
+            const { order } = viewDialog
+            setViewDialog(null)
+            if (name) createView(name, order)
+          }}
+        >
+          The Default view always stays automatic. Your new arrangement can be saved as a view you can switch to.
+        </PromptDialog>
+      )}
+      {viewDialog?.kind === 'rename' && activeView && (
+        <PromptDialog
+          title="Rename view"
+          label="Name"
+          initial={activeView.name}
+          confirmLabel="Rename"
+          onDone={(name) => {
+            setViewDialog(null)
+            if (name) dispatch({ type: 'saveView', view: { ...activeView, name } })
+          }}
+        />
+      )}
+      {viewDialog?.kind === 'delete' && activeView && (
+        <ConfirmDialog
+          title={`Delete the view "${activeView.name}"?`}
+          buttons={[
+            { label: 'Cancel', value: false },
+            { label: 'Delete view', value: true, kind: 'danger' },
+          ]}
+          cancelValue={false}
+          onChoose={(yes) => {
+            setViewDialog(null)
+            if (!yes) return
+            dispatch({ type: 'deleteView', id: activeView.id })
+            setActiveViewId(null)
+          }}
+        >
+          Only this arrangement is removed. Nobody in the tree is changed.
+        </ConfirmDialog>
+      )}
+      {viewDialog?.kind === 'reset' && activeView && (
+        <ConfirmDialog
+          title={`Reset "${activeView.name}"?`}
+          buttons={[
+            { label: 'Cancel', value: false },
+            { label: 'Reset view', value: true, kind: 'danger' },
+          ]}
+          cancelValue={false}
+          onChoose={(yes) => {
+            setViewDialog(null)
+            if (yes) dispatch({ type: 'saveView', view: { ...activeView, siblingOrder: {}, chainOrder: {} } })
+          }}
+        >
+          It will go back to the Default arrangement. You can rearrange it again afterwards.
         </ConfirmDialog>
       )}
     </div>
