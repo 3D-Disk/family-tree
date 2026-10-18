@@ -252,7 +252,7 @@ describe('only children', () => {
     expectNoOverlaps(t)
   })
 
-  it('keeps both lines straight when two only children marry', () => {
+  it('moves two married only children apart, but only a little', () => {
     let f = family([
       ['hp', 'male'], ['hm', 'female'], ['pp', 'male'], ['pm', 'female'], ['rob', 'male'], ['anne', 'female'], ['kid', 'male'],
     ])
@@ -260,8 +260,9 @@ describe('only children', () => {
     f = couple(f, 'pp', 'pm', ['anne'])
     f = couple(f, 'rob', 'anne', ['kid'])
     const t = layoutFamily(f)
-    expect(centre(t, 'rob')).toBeCloseTo(union(t, 'hp', 'hm'), 0)
-    expect(centre(t, 'anne')).toBeCloseTo(union(t, 'pp', 'pm'), 0)
+    const gap = x(t, 'anne') - x(t, 'rob') - W
+    expect(gap).toBeGreaterThan(LAYOUT.partnerGap)
+    expect(gap).toBeLessThanOrEqual(LAYOUT.partnerGap + W + 0.5)
     expect(centre(t, 'kid')).toBeCloseTo(union(t, 'rob', 'anne'), 0)
     expectNoOverlaps(t)
   })
@@ -274,5 +275,29 @@ describe('only children', () => {
     expect(x(t, 'anne') - x(t, 'rob')).toBe(W + LAYOUT.partnerGap)
     expect(centre(t, 'rob')).toBeCloseTo(union(t, 'hp', 'hm'), 0)
     expect(centre(t, 'kid')).toBeCloseTo(union(t, 'rob', 'anne'), 0)
+  })
+})
+
+describe('partner spacing', () => {
+  /** A straight line of only children going `n` generations up from `id`. */
+  function lineUp(f: Family, id: string, n: number): Family {
+    let child = id
+    for (let g = 1; g <= n; g++) {
+      const [pa, ma] = [`${id}-pa${g}`, `${id}-ma${g}`]
+      f = { ...f, people: { ...f.people, ...family([[pa, 'male'], [ma, 'female']]).people } }
+      f = couple(f, pa, ma, [child])
+      child = pa
+    }
+    return f
+  }
+
+  it('keeps parents close when one side goes back much further than the other', () => {
+    let f = couple(family([['dad', 'male'], ['mom', 'female'], ['me', 'male']]), 'dad', 'mom', ['me'])
+    f = lineUp(f, 'dad', 4)
+    f = lineUp(f, 'mom', 2)
+    const t = layoutFamily(f)
+    expect(x(t, 'mom') - x(t, 'dad')).toBeLessThanOrEqual(W + LAYOUT.partnerGap + W + 0.5)
+    expect(centre(t, 'me')).toBeCloseTo((centre(t, 'dad') + centre(t, 'mom')) / 2, 0)
+    expectNoOverlaps(t)
   })
 })

@@ -412,13 +412,37 @@ export function layoutFamily(f: Family, L = LAYOUT, view?: ViewOrder): TreeLayou
       const fam = families.get(familyKeyOf.get(id) ?? '')
       return !!fam && fam.parents.some((p) => inComp.has(p)) && fam.children.filter((k) => inComp.has(k)).length === 1
     }
+    /** Partners may move apart to keep lines straight, but only by about one card. */
+    const maxPartnerGap = L.partnerGap + L.cardWidth
     const place = (r: RowCards, wantCentres: number[], weights: number[]) => {
-      const lefts = isotonicPlace(
-        wantCentres.map((x) => x - L.cardWidth / 2),
-        r.ids.map(() => L.cardWidth),
-        r.gaps,
-        weights,
-      )
+      const solve = (want: number[]) =>
+        isotonicPlace(want, r.ids.map(() => L.cardWidth), r.gaps, weights)
+      let lefts = solve(wantCentres.map((x) => x - L.cardWidth / 2))
+      for (let round = 0; round < 3; round++) {
+        let capped = false
+        const want = [...lefts]
+        for (let i = 0; i < r.ids.length; ) {
+          let j = i
+          while (j + 1 < r.ids.length && r.chain[j + 1] === r.chain[i]) j++
+          // Pull a spread-out couple back together around its (weighted) middle.
+          const next = [want[i]]
+          for (let k = i + 1; k <= j; k++) {
+            const gap = Math.min(want[k] - want[k - 1] - L.cardWidth, maxPartnerGap)
+            if (gap < want[k] - want[k - 1] - L.cardWidth - 0.5) capped = true
+            next.push(next[next.length - 1] + L.cardWidth + gap)
+          }
+          let sum = 0
+          let total = 0
+          for (let k = i; k <= j; k++) {
+            sum += weights[k] * (want[k] - next[k - i])
+            total += weights[k]
+          }
+          for (let k = i; k <= j; k++) want[k] = next[k - i] + sum / total
+          i = j + 1
+        }
+        if (!capped) break
+        lefts = solve(want)
+      }
       r.ids.forEach((id, i) => left.set(id, lefts[i]))
     }
     const downPass = (g: number) => {

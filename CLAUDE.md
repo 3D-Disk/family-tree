@@ -64,8 +64,9 @@ Single user for now; sharing/accounts are a future phase.
     "child below parents / partners level" safety rules for odd families →
     partner "chains" per row → sibling groups ordered under parents via
     barycentre sweeps → x positions per card by alternating weighted
-    least-squares passes (`isotonicPlace`); partners may move apart so an
-    only child always sits straight under their parents → lines). Returns card positions + line polylines.
+    least-squares passes (`isotonicPlace`); partners may move apart (at most
+    one card width, `maxPartnerGap`) so only children sit straight under
+    their parents → lines). Returns card positions + line polylines.
     `layoutFamily(f, L, view)` takes a view's `siblingOrder` / `chainOrder`
     and applies them with `applyOrder` (listed people take the same slots in
     the saved order; people added later keep their default spot). It also
