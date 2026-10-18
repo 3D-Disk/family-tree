@@ -238,7 +238,7 @@ export default function App() {
           {activeView && <ViewBar name={activeView.name} onReset={() => setViewDialog({ kind: 'reset' })} />}
           <div className="tree-area">
             <TreeView
-              key={`${state.opened}:${treeFocus ? `${treeFocus.personId}:${treeFocus.up}:${treeFocus.down}` : 'all'}`}
+              key={`${state.opened}:${treeFocus ? `${treeFocus.personId}:${treeFocus.up}:${treeFocus.down}:${treeFocus.across}` : 'all'}`}
               treeFocus={treeFocus}
               view={activeView}
               dateFormat={dateFormat}
@@ -274,7 +274,7 @@ export default function App() {
               personId={panelPerson.id}
               onEdit={() => editPerson(panelPerson.id)}
               onDeleted={closePanel}
-              onFocus={() => setTreeFocus({ personId: panelPerson.id, up: Infinity, down: Infinity })}
+              onFocus={() => setTreeFocus({ personId: panelPerson.id, up: Infinity, down: Infinity, across: 0 })}
               isFocused={treeFocus?.personId === panelPerson.id}
               onOpenPerson={(id) => {
                 selectPerson(id)

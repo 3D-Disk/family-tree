@@ -624,14 +624,21 @@ kbd {
 }
 
 .focus-select {
+  max-width: 100%;
   display: flex;
   align-items: center;
   gap: 6px;
   color: var(--text-muted);
 }
 
+.focus-select span {
+  white-space: nowrap;
+}
+
 .focus-select select {
   padding: 3px 6px;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .focus-note {

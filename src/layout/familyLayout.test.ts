@@ -235,3 +235,44 @@ describe('isotonicPlace', () => {
     expect(isotonicPlace([100, 100], [10, 10], [10])).toEqual([90, 110])
   })
 })
+
+describe('only children', () => {
+  const union = (t: TreeLayout, a: string, b: string) => (centre(t, a) + centre(t, b)) / 2
+
+  it('puts an only child straight under their parents when a parent has another family', () => {
+    let f = family([
+      ['ex', 'female'], ['rob', 'male'], ['anne', 'female'], ['tom', 'male'],
+      ['emma', 'female'], ['james', 'male'], ['lucy', 'female'], ['dave', 'male'],
+    ])
+    f = couple(f, 'ex', 'rob', ['tom'], 'divorced')
+    f = couple(f, 'rob', 'anne', ['emma', 'james', 'lucy'])
+    f = addPartnership(f, 'emma', 'dave')
+    const t = layoutFamily(f)
+    expect(centre(t, 'tom')).toBeCloseTo(union(t, 'ex', 'rob'), 0)
+    expectNoOverlaps(t)
+  })
+
+  it('keeps both lines straight when two only children marry', () => {
+    let f = family([
+      ['hp', 'male'], ['hm', 'female'], ['pp', 'male'], ['pm', 'female'], ['rob', 'male'], ['anne', 'female'], ['kid', 'male'],
+    ])
+    f = couple(f, 'hp', 'hm', ['rob'])
+    f = couple(f, 'pp', 'pm', ['anne'])
+    f = couple(f, 'rob', 'anne', ['kid'])
+    const t = layoutFamily(f)
+    expect(centre(t, 'rob')).toBeCloseTo(union(t, 'hp', 'hm'), 0)
+    expect(centre(t, 'anne')).toBeCloseTo(union(t, 'pp', 'pm'), 0)
+    expect(centre(t, 'kid')).toBeCloseTo(union(t, 'rob', 'anne'), 0)
+    expectNoOverlaps(t)
+  })
+
+  it('keeps an ordinary couple side by side', () => {
+    let f = family([['hp', 'male'], ['hm', 'female'], ['rob', 'male'], ['anne', 'female'], ['kid', 'male']])
+    f = couple(f, 'hp', 'hm', ['rob'])
+    f = couple(f, 'rob', 'anne', ['kid'])
+    const t = layoutFamily(f)
+    expect(x(t, 'anne') - x(t, 'rob')).toBe(W + LAYOUT.partnerGap)
+    expect(centre(t, 'rob')).toBeCloseTo(union(t, 'hp', 'hm'), 0)
+    expect(centre(t, 'kid')).toBeCloseTo(union(t, 'rob', 'anne'), 0)
+  })
+})
