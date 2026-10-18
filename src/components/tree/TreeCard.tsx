@@ -1,5 +1,6 @@
 import type { NodeProps, Node } from '@xyflow/react'
 import { useLayoutEffect, useRef } from 'react'
+import type { CardDateFormat } from '../../model/dates.ts'
 import { cardName, lifeSpan } from '../../model/person.ts'
 import type { Person } from '../../model/types.ts'
 import Avatar from '../Avatar.tsx'
@@ -11,6 +12,8 @@ export type TreeCardData = {
   person: Person
   photo: Blob | undefined
   selected: boolean
+  /** How much of each date to show (years, month & year, or full dates). */
+  dateFormat: CardDateFormat
   /** The person the tree is focused on. */
   focused?: boolean
   dimmed: boolean
@@ -41,6 +44,28 @@ function FittedName({ name }: { name: string }) {
   )
 }
 
+const DATES_MAX_PX = 12.5
+const DATES_MIN_PX = 8.5
+
+/** The dates line, shrinking the text if longer dates wouldn't fit on one line. */
+function FittedDates({ text }: { text: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = ref.current!
+    let size = DATES_MAX_PX
+    el.style.fontSize = `${size}px`
+    while (el.scrollWidth > el.clientWidth + 1 && size > DATES_MIN_PX) {
+      size -= 0.5
+      el.style.fontSize = `${size}px`
+    }
+  }, [text])
+  return (
+    <div ref={ref} className="tree-card-dates">
+      {text}
+    </div>
+  )
+}
+
 const ACTIONS: { kind: AddKind; label: string }[] = [
   { kind: 'parent', label: '+ Parent' },
   { kind: 'partner', label: '+ Partner' },
@@ -52,7 +77,7 @@ const ACTIONS: { kind: AddKind; label: string }[] = [
 export default function TreeCard({ data }: NodeProps<TreeCardNode>) {
   const { person, photo, selected, focused, dimmed } = data
   const name = cardName(person)
-  const span = lifeSpan(person)
+  const span = lifeSpan(person, data.dateFormat)
   return (
     <div
       className={`tree-card gender-${person.gender}${selected ? ' selected' : ''}${focused ? ' focused' : ''}${dimmed ? ' dimmed' : ''}${person.living ? '' : ' deceased'}`}
@@ -61,7 +86,7 @@ export default function TreeCard({ data }: NodeProps<TreeCardNode>) {
     >
       <Avatar photo={photo} gender={person.gender} size={56} alt={name} />
       <FittedName name={name} />
-      {span && <div className="tree-card-dates">{span}</div>}
+      {span && <FittedDates text={span} />}
       <div className="tree-card-actions" role="group" aria-label={`Add a relative of ${name}`}>
         {ACTIONS.map((a) => (
           <button

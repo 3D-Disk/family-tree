@@ -18,6 +18,10 @@ describe('lifeSpan', () => {
     expect(lifeSpan(person({ living: false, birth: { date: 'abt 1890', place: '' } }))).toBe('c. 1890 – ?')
     expect(lifeSpan(person({ living: false }))).toBe('Deceased')
     expect(lifeSpan(person({}))).toBe('')
+    const full = person({ living: false, birth: { date: '3/15/1918', place: '' }, death: { date: 'Dec 1985', place: '' } })
+    expect(lifeSpan(full, 'full')).toBe('3/15/1918 – 12/1985')
+    expect(lifeSpan(full, 'month')).toBe('3/1918 – 12/1985')
+    expect(lifeSpan(full)).toBe('1918 – 1985')
   })
 })
 

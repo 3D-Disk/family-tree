@@ -90,6 +90,9 @@ Single user for now; sharing/accounts are a future phase.
   between people or between profile and gallery ("Make profile photo" copies).
 - `PhotoViewer` takes a list of photos (arrows/← → keys, captions, counter).
 - Deleting a person goes through `DeletePersonButton` (Details and form).
+- Card dates: header "Card dates" menu (Years / Month & year / Full dates)
+  → `lifeSpan(p, format)` / `shortDate` in `dates.ts`; tree cards only. The
+  choice is a per-browser preference in localStorage, not saved in the file.
 - The fallback file picker (Safari/iPhone/Firefox) has no `accept` filter on
   purpose: iOS greys out unknown types like `.familytree`. `readTreeFile`
   validates instead.

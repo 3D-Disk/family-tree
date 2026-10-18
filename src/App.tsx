@@ -13,6 +13,7 @@ import FocusBar from './components/tree/FocusBar.tsx'
 import TreeView, { type TreeFocus } from './components/tree/TreeView.tsx'
 import { isFiltering, matchPeople, sortPeople, type PeopleSort } from './model/filters.ts'
 import { emptyPerson, fullName, newId } from './model/person.ts'
+import type { CardDateFormat } from './model/dates.ts'
 import type { ViewOrder } from './model/types.ts'
 import type { Person } from './model/types.ts'
 import { emptyHistory, step, visit, type PanelHistory } from './state/panelHistory.ts'
@@ -26,6 +27,7 @@ type Editing = {
   addRequest?: { kind: AddKind; n: number }
 } | null
 type LeaveChoice = 'save' | 'discard' | 'stay'
+const DATE_FORMAT_KEY = 'family-tree:card-dates'
 
 export default function App() {
   const { state, save, dispatch } = useTree()
@@ -54,6 +56,23 @@ export default function App() {
   const [viewDialog, setViewDialog] = useState<
     { kind: 'new' | 'rename' | 'delete' | 'reset' } | { kind: 'saveAsNew'; order: ViewOrder } | null
   >(null)
+  /** How much of each date the tree cards show; remembered in this browser only. */
+  const [dateFormat, setDateFormat] = useState<CardDateFormat>(() => {
+    try {
+      const saved = localStorage.getItem(DATE_FORMAT_KEY)
+      return saved === 'month' || saved === 'full' ? saved : 'year'
+    } catch {
+      return 'year'
+    }
+  })
+  const changeDateFormat = (f: CardDateFormat) => {
+    setDateFormat(f)
+    try {
+      localStorage.setItem(DATE_FORMAT_KEY, f)
+    } catch {
+      // Private browsing etc.: the choice just won't be remembered.
+    }
+  }
   /** People opened in the side panel, for its back / forward buttons. */
   const [history, setHistory] = useState<PanelHistory>(emptyHistory)
 
@@ -170,6 +189,8 @@ export default function App() {
         views={state.tree.views}
         activeViewId={activeView?.id ?? null}
         onViewAction={onViewAction}
+        dateFormat={dateFormat}
+        onDateFormatChange={changeDateFormat}
         query={query}
         onQueryChange={(q) => {
           setQuery(q)
@@ -220,6 +241,7 @@ export default function App() {
               key={`${state.opened}:${treeFocus ? `${treeFocus.personId}:${treeFocus.up}:${treeFocus.down}` : 'all'}`}
               treeFocus={treeFocus}
               view={activeView}
+              dateFormat={dateFormat}
               onReorder={(order) =>
                 activeView
                   ? dispatch({ type: 'saveView', view: { ...activeView, ...order } })

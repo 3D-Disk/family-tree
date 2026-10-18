@@ -2,6 +2,7 @@ import { Controls, MiniMap, ReactFlow, ReactFlowProvider, useReactFlow, type Nod
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { LAYOUT, layoutFamily } from '../../layout/familyLayout.ts'
 import { emptyViewOrder, reorderByDrop } from '../../layout/viewEdits.ts'
+import type { CardDateFormat } from '../../model/dates.ts'
 import type { ViewOrder } from '../../model/types.ts'
 import { focusIds, subFamily, type FocusOptions } from '../../model/focus.ts'
 import { cardPhoto } from '../../model/person.ts'
@@ -29,6 +30,8 @@ interface Props {
   view: ViewOrder | null
   /** A card was dragged to a new place: the view's order with that change. */
   onReorder(next: ViewOrder): void
+  /** How much of each date the cards show. */
+  dateFormat: CardDateFormat
 }
 
 export type TreeFocus = FocusOptions & { personId: string }
@@ -55,7 +58,7 @@ export default function TreeView(props: Props) {
   )
 }
 
-function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus, treeFocus, view, onReorder }: Props) {
+function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus, treeFocus, view, onReorder, dateFormat }: Props) {
   const { state } = useTree()
   const tree = state.tree!
   const { setCenter, getZoom } = useReactFlow()
@@ -100,6 +103,7 @@ function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus, treeFo
         person: tree.people[p.id],
         photo: cardPhoto(tree.people[p.id], state.photos),
         selected: p.id === selectedId,
+        dateFormat,
         focused: p.id === treeFocus?.personId,
         dimmed: highlightIds !== null && !highlightIds.has(p.id),
         onAdd: onAddRelative,
@@ -119,7 +123,7 @@ function Tree({ highlightIds, selectedId, onSelect, onAddRelative, focus, treeFo
         ]
       : []
     return [lines, ...label, ...cards] as Node[]
-  }, [layout, tree.people, state.photos, selectedId, highlightIds, onAddRelative, treeFocus, drag])
+  }, [layout, tree.people, state.photos, selectedId, highlightIds, onAddRelative, treeFocus, drag, dateFormat])
 
   // Centre on a person when asked (e.g. picked from the People list).
   const latestLayout = useRef(layout)

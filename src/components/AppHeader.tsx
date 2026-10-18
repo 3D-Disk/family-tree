@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import type { CardDateFormat } from '../model/dates.ts'
 import { useTree } from '../state/treeContext.ts'
 import { canSaveInPlace } from '../storage/fileAccess.ts'
 
@@ -15,6 +16,8 @@ interface Props {
   views: { id: string; name: string }[]
   activeViewId: string | null
   onViewAction(action: ViewAction): void
+  dateFormat: CardDateFormat
+  onDateFormatChange(format: CardDateFormat): void
 }
 
 export type ViewAction =
@@ -23,7 +26,7 @@ export type ViewAction =
   | { type: 'rename' }
   | { type: 'delete' }
 
-export default function AppHeader({ onAddPerson, beforeFileAction, query, onQueryChange, filterCount, onFilterClick, views, activeViewId, onViewAction }: Props) {
+export default function AppHeader({ onAddPerson, beforeFileAction, query, onQueryChange, filterCount, onFilterClick, views, activeViewId, onViewAction, dateFormat, onDateFormatChange }: Props) {
   const { state, dispatch, save, saveAs, openFile, close, confirmDiscard } = useTree()
   const menu = useRef<HTMLDetailsElement>(null)
   const tree = state.tree!
@@ -95,6 +98,20 @@ export default function AppHeader({ onAddPerson, beforeFileAction, query, onQuer
             <option value="__new">＋ New view…</option>
             {activeViewId && <option value="__rename">Rename view…</option>}
             {activeViewId && <option value="__delete">Delete view…</option>}
+          </select>
+        </label>
+
+        <label className="views-select">
+          <span>Card dates</span>
+          <select
+            className="dates-select"
+            aria-label="Dates shown on cards"
+            value={dateFormat}
+            onChange={(e) => onDateFormatChange(e.target.value as CardDateFormat)}
+          >
+            <option value="year">Years (1950)</option>
+            <option value="month">Month &amp; year (3/1950)</option>
+            <option value="full">Full dates (3/15/1950)</option>
           </select>
         </label>
 
