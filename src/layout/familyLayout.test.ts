@@ -58,6 +58,54 @@ describe('generations', () => {
   })
 })
 
+describe('generations line up across both sides', () => {
+  // Dad's line goes back 3 generations above me, Mom's goes back 4.
+  function unevenSides() {
+    let f = family([
+      ['me', 'female'], ['dad', 'male'], ['mom', 'female'],
+      ['pgf', 'male'], ['pgm', 'female'], ['pggf', 'male'], ['pggm', 'female'],
+      ['mgf', 'male'], ['mgm', 'female'], ['mggf', 'male'], ['mggm', 'female'], ['mgggf', 'male'], ['mgggm', 'female'],
+      ['aunt', 'female'],
+    ])
+    f = couple(f, 'pggf', 'pggm', ['pgf'])
+    f = couple(f, 'pgf', 'pgm', ['dad', 'aunt'])
+    f = couple(f, 'mgggf', 'mgggm', ['mggf'])
+    f = couple(f, 'mggf', 'mggm', ['mgf'])
+    f = couple(f, 'mgf', 'mgm', ['mom'])
+    f = couple(f, 'dad', 'mom', ['me'])
+    return f
+  }
+
+  it('puts each generation on one row, whichever side it is on', () => {
+    const t = layoutFamily(unevenSides())
+    expect(row(t, 'dad')).toBe(row(t, 'mom'))
+    expect(row(t, 'pgf')).toBe(row(t, 'mgf'))
+    expect(row(t, 'pggf')).toBe(row(t, 'mggf'))
+    // The longer side's extra generation sits alone at the top.
+    expect(row(t, 'mgggf')).toBe(0)
+    expect(row(t, 'pggf')).toBe(1)
+    expect(row(t, 'me')).toBe(4)
+  })
+
+  it('keeps a childless aunt on her brother’s row', () => {
+    const t = layoutFamily(unevenSides())
+    expect(row(t, 'aunt')).toBe(row(t, 'dad'))
+  })
+
+  it('still puts a child below both parents when a partner is from another generation', () => {
+    // Dad marries his late wife's niece: the generations can't all be exact.
+    let f = family([['gp', 'male'], ['sis', 'female'], ['wife1', 'female'], ['niece', 'female'], ['dad', 'male'], ['kid', 'male']])
+    f = couple(f, 'gp', 'wife1', ['sis'])
+    f = addParentLink(f, 'sis', 'niece')
+    f = couple(f, 'dad', 'wife1', [])
+    f = couple(f, 'dad', 'niece', ['kid'])
+    const t = layoutFamily(f)
+    expect(row(t, 'kid')).toBeGreaterThan(row(t, 'dad'))
+    expect(row(t, 'kid')).toBeGreaterThan(row(t, 'niece'))
+    expect(row(t, 'dad')).toBe(row(t, 'niece'))
+  })
+})
+
 describe('ordering', () => {
   it('orders siblings oldest to youngest, unknown birth dates last in the order added', () => {
     let f = couple(family([['dad', 'male'], ['mom', 'female'], ['c1', 'male'], ['c2', 'female'], ['c3', 'male'], ['c4', 'female']]), 'dad', 'mom', ['c1', 'c2', 'c3', 'c4'])

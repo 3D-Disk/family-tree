@@ -55,7 +55,10 @@ Single user for now; sharing/accounts are a future phase.
   - `src/storage/`: `fileFormat.ts` (.familytree zip, versioned; add defaults
     for new fields in `readTreeFile` so old files keep opening),
     `fileAccess.ts` (pickers/download), `autosave.ts` (Dexie), `images.ts`
-  - `src/layout/familyLayout.ts`: pure Default-view layout (generations →
+  - `src/layout/familyLayout.ts`: pure Default-view layout (generations —
+    counted by walking relatives (parent −1, child +1, partner 0) so each row
+    is one true generation even when one side goes back further, then the
+    "child below parents / partners level" safety rules for odd families →
     partner "chains" per row → sibling groups ordered under parents via
     barycentre sweeps → x positions by alternating least-squares passes
     (`isotonicPlace`) → lines). Returns card positions + line polylines.
