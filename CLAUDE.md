@@ -75,8 +75,8 @@ Single user for now; sharing/accounts are a future phase.
     `ConfirmDialog` is the shared pop-up (use it instead of `window.confirm` for
     new prompts). `PhotoAdjuster` frames profile photos.
 - Person details: `biography`, `events` (typed Life events: residence,
-  immigration, occupation… — the Summary derives "Lived in", "Immigration",
-  "Occupation" from them), `burial`, `notable` (list), `links` (only http(s)
+  immigration, citizenship, occupation… — the Summary derives "Lived in",
+  "Immigration", "Citizenship", "Occupation" from them), `burial`, `notable` (list), `links` (only http(s)
   is ever rendered as a link; see `safeUrl`). Editors live in
   `components/edit/DetailEditors.tsx`.
 - Profile photos: the original (≤1600px) is `photoId`; the framing is

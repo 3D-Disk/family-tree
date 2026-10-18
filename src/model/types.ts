@@ -12,6 +12,7 @@ export type EventType =
   | 'residence'
   | 'immigration'
   | 'emigration'
+  | 'citizenship'
   | 'military'
   | 'education'
   | 'occupation'

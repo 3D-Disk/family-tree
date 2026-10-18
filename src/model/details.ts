@@ -9,6 +9,7 @@ export const EVENT_TYPES: { value: EventType; label: string; titleLabel: string 
   { value: 'residence', label: 'Residence', titleLabel: 'Address or description' },
   { value: 'immigration', label: 'Immigration', titleLabel: 'Arrived from' },
   { value: 'emigration', label: 'Emigration', titleLabel: 'Left for' },
+  { value: 'citizenship', label: 'Citizenship', titleLabel: 'Country (e.g. United States)' },
   { value: 'occupation', label: 'Occupation', titleLabel: 'Job title' },
   { value: 'military', label: 'Military service', titleLabel: 'Branch, unit or rank' },
   { value: 'education', label: 'Education', titleLabel: 'School or qualification' },
@@ -73,6 +74,13 @@ export function summaryRows(p: Person): SummaryRow[] {
     byDate('immigration').map((e) => {
       const where = [e.title && `from ${e.title}`, e.place && `to ${e.place}`].filter(Boolean).join(' ')
       return [formatDate(e.date), where].filter(Boolean).join(', ')
+    }),
+  )
+  add(
+    'Citizenship',
+    byDate('citizenship').map((e) => {
+      const where = e.place.trim() && `in ${e.place.trim()}`
+      return [e.title.trim(), [formatDate(e.date), where].filter(Boolean).join(' ')].filter(Boolean).join(', ')
     }),
   )
   add('Occupation', byDate('occupation').map(placeWithDates))
