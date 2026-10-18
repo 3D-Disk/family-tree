@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dateSortKey, formatDate, parseDate, yearOf } from './dates.ts'
+import { dateSortKey, formatDate, parseDate, shortDate, yearOf } from './dates.ts'
 
 describe('parseDate', () => {
   it.each([
@@ -48,5 +48,22 @@ describe('sorting helpers', () => {
   it('orders partial dates before full dates in the same year', () => {
     expect(dateSortKey('1890')!).toBeLessThan(dateSortKey('Mar 1890')!)
     expect(dateSortKey('Mar 1890')!).toBeLessThan(dateSortKey('3/2/1890')!)
+  })
+})
+
+describe('shortDate (tree cards)', () => {
+  it.each([
+    ['3/15/1950', 'year', '1950'],
+    ['3/15/1950', 'month', '3/1950'],
+    ['3/15/1950', 'full', '3/15/1950'],
+    ['Mar 1950', 'full', '3/1950'],
+    ['1950', 'full', '1950'],
+    ['abt. 1890', 'month', 'c. 1890'],
+    ['bef. 6/2/1900', 'full', 'bef. 6/2/1900'],
+  ] as const)('%s as %s → %s', (input, format, expected) => {
+    expect(shortDate(input, format)).toBe(expected)
+  })
+  it('gives nothing for unreadable dates', () => {
+    expect(shortDate('spring', 'full')).toBeUndefined()
   })
 })

@@ -150,9 +150,42 @@ export function layoutFamily(f: Family, L = LAYOUT, view?: ViewOrder): TreeLayou
     .sort((a, b) => b.length - a.length || added.get(a[0])! - added.get(b[0])!)
 
   // ---- Generations ----
-  const gen = new Map(people.map((p) => [p.id, 0]))
+  // First count generations like a genealogist: walk from relative to relative,
+  // one row up to a parent, one row down to a child, the same row for a partner.
+  // So every generation shares a row, even when one side goes back further.
+  const gen = new Map<string, number>()
+  const steps = new Map<string, [string, number][]>(people.map((p) => [p.id, []]))
+  for (const l of links) {
+    steps.get(l.childId)!.push([l.parentId, -1])
+    steps.get(l.parentId)!.push([l.childId, 1])
+  }
+  for (const p of partnerships) {
+    steps.get(p.personIds[0])!.push([p.personIds[1], 0])
+    steps.get(p.personIds[1])!.push([p.personIds[0], 0])
+  }
+  for (const start of [...people].sort((a, b) => added.get(a.id)! - added.get(b.id)!)) {
+    if (gen.has(start.id)) continue
+    gen.set(start.id, 0)
+    const queue = [start.id]
+    while (queue.length) {
+      const id = queue.shift()!
+      for (const [other, d] of steps.get(id)!) {
+        if (gen.has(other)) continue // already placed (unusual families can disagree; fixed below)
+        gen.set(other, gen.get(id)! + d)
+        queue.push(other)
+      }
+    }
+  }
+  // Start each family group at row 0, so the rules below can only move people down.
+  for (const comp of components) {
+    const min = Math.min(...comp.map((id) => gen.get(id)!))
+    comp.forEach((id) => gen.set(id, gen.get(id)! - min))
+  }
+
   const hasParents = (id: string) => (linksByChild.get(id)?.length ?? 0) > 0
-  // Each rule only ever moves people down, so this settles; the cap guards odd data.
+  // Then make sure the basic rules hold even in unusual families (e.g. someone who
+  // married a person from another generation). Each rule only ever moves people
+  // down, so this settles; the cap guards odd data.
   for (let i = 0, changed = true; changed && i < people.length * 2 + 10; i++) {
     changed = false
     const raise = (id: string, g: number) => {

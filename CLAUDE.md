@@ -55,7 +55,10 @@ Single user for now; sharing/accounts are a future phase.
   - `src/storage/`: `fileFormat.ts` (.familytree zip, versioned; add defaults
     for new fields in `readTreeFile` so old files keep opening),
     `fileAccess.ts` (pickers/download), `autosave.ts` (Dexie), `images.ts`
-  - `src/layout/familyLayout.ts`: pure Default-view layout (generations →
+  - `src/layout/familyLayout.ts`: pure Default-view layout (generations —
+    counted by walking relatives (parent −1, child +1, partner 0) so each row
+    is one true generation even when one side goes back further, then the
+    "child below parents / partners level" safety rules for odd families →
     partner "chains" per row → sibling groups ordered under parents via
     barycentre sweeps → x positions by alternating least-squares passes
     (`isotonicPlace`) → lines). Returns card positions + line polylines.
@@ -72,8 +75,8 @@ Single user for now; sharing/accounts are a future phase.
     `ConfirmDialog` is the shared pop-up (use it instead of `window.confirm` for
     new prompts). `PhotoAdjuster` frames profile photos.
 - Person details: `biography`, `events` (typed Life events: residence,
-  immigration, occupation… — the Summary derives "Lived in", "Immigration",
-  "Occupation" from them), `burial`, `notable` (list), `links` (only http(s)
+  immigration, citizenship, occupation… — the Summary derives "Lived in",
+  "Immigration", "Citizenship", "Occupation" from them), `burial`, `notable` (list), `links` (only http(s)
   is ever rendered as a link; see `safeUrl`). Editors live in
   `components/edit/DetailEditors.tsx`.
 - Profile photos: the original (≤1600px) is `photoId`; the framing is
@@ -87,6 +90,9 @@ Single user for now; sharing/accounts are a future phase.
   between people or between profile and gallery ("Make profile photo" copies).
 - `PhotoViewer` takes a list of photos (arrows/← → keys, captions, counter).
 - Deleting a person goes through `DeletePersonButton` (Details and form).
+- Card dates: header "Card dates" menu (Years / Month & year / Full dates)
+  → `lifeSpan(p, format)` / `shortDate` in `dates.ts`; tree cards only. The
+  choice is a per-browser preference in localStorage, not saved in the file.
 - The fallback file picker (Safari/iPhone/Firefox) has no `accept` filter on
   purpose: iOS greys out unknown types like `.familytree`. `readTreeFile`
   validates instead.

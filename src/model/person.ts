@@ -1,4 +1,4 @@
-import { formatDate, shortYear } from './dates.ts'
+import { formatDate, shortDate, type CardDateFormat } from './dates.ts'
 import type { LifeEvent, Person, PhotoStore } from './types.ts'
 
 export function newId(): string {
@@ -48,9 +48,9 @@ export function cardName(p: Person): string {
 }
 
 /** e.g. "1890 – 1960", "b. 1990", "1890 – ?", "d. 1960". */
-export function lifeSpan(p: Person): string {
-  const born = shortYear(p.birth.date)
-  const died = shortYear(p.death.date)
+export function lifeSpan(p: Person, format: CardDateFormat = 'year'): string {
+  const born = shortDate(p.birth.date, format)
+  const died = shortDate(p.death.date, format)
   if (p.living) return born ? `b. ${born}` : ''
   if (born && died) return `${born} – ${died}`
   if (born) return `${born} – ?`

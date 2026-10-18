@@ -189,7 +189,7 @@ function EventFields({
         </label>
       </div>
       <label className="field">
-        <span>{e.type === 'immigration' ? 'Arrived in' : e.type === 'emigration' ? 'Left from' : 'Place'}</span>
+        <span>{e.type === 'immigration' ? 'Arrived in' : e.type === 'emigration' ? 'Left from' : e.type === 'citizenship' ? 'Where granted (e.g. court or city)' : 'Place'}</span>
         <input value={e.place} onChange={(ev) => onChange({ place: ev.target.value })} placeholder="e.g. Boston, MA, USA" />
       </label>
       <label className="field">

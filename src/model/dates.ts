@@ -101,10 +101,22 @@ export function yearOf(input: string): number | undefined {
 
 const SHORT_PREFIX: Record<DateQualifier, string> = { exact: '', about: 'c. ', before: 'bef. ', after: 'aft. ' }
 
-/** Just the year, keeping any qualifier: "1890", "c. 1890", "bef. 1900". */
-export function shortYear(input: string): string | undefined {
+export type CardDateFormat = 'year' | 'month' | 'full'
+
+/**
+ * A short date for tree cards, keeping any qualifier:
+ *  - 'year'  → "1950", "c. 1890"
+ *  - 'month' → "3/1950" (or just the year if the month isn't known)
+ *  - 'full'  → "3/15/1950" (or as much as is known)
+ */
+export function shortDate(input: string, format: CardDateFormat): string | undefined {
   const d = parseDate(input)
-  return d ? SHORT_PREFIX[d.qualifier] + d.year : undefined
+  if (!d) return undefined
+  let body = String(d.year)
+  if (format !== 'year' && d.month !== undefined) {
+    body = format === 'full' && d.day !== undefined ? `${d.month}/${d.day}/${d.year}` : `${d.month}/${d.year}`
+  }
+  return SHORT_PREFIX[d.qualifier] + body
 }
 
 /** A number for ordering dates chronologically (missing month/day sort first). */

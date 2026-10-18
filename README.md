@@ -30,6 +30,8 @@ Safari and Firefox download a new, dated copy each time you save instead.
   Relatives, Life events, Burial, Notable details and Links, with a menu to
   jump between them. Click **Edit details** to change anything, or
   **Delete person** to remove them.
+- **Card dates:** the **Card dates** menu at the top switches the tree cards
+  between years only, month & year (3/1950) or full dates (3/15/1950).
 - **Views:** drag a card left or right to rearrange brothers & sisters or
   swap a couple's sides. The first time, you're asked to save it as a new
   **View** (the Default view always stays automatic). Switch, rename or

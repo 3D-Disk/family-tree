@@ -36,6 +36,7 @@ describe('summaryRows', () => {
         ev({ type: 'residence', place: 'Cork, Ireland', date: '1900', endDate: '1924' }),
         ev({ type: 'immigration', date: '1924', title: 'Ireland', place: 'New York, NY' }),
         ev({ type: 'occupation', title: 'Teacher' }),
+        ev({ type: 'citizenship', title: 'United States', date: '3/15/1931', place: 'Boston, MA' }),
       ],
     })
     const rows = Object.fromEntries(summaryRows(p).map((r) => [r.label, r.values]))
@@ -44,6 +45,7 @@ describe('summaryRows', () => {
     expect(rows['Lived in']).toEqual(['Cork, Ireland (1900 – 1924)', 'Boston, MA (1925 – 1980)'])
     expect(rows.Immigration).toEqual(['1924, from Ireland to New York, NY'])
     expect(rows.Occupation).toEqual(['Teacher'])
+    expect(rows.Citizenship).toEqual(['United States, 3/15/1931 in Boston, MA'])
     expect(rows.Buried).toEqual(['Mount Hope, Boston, MA'])
   })
   it('leaves out empty rows', () => {
