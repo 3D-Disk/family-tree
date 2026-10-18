@@ -1,4 +1,4 @@
-import type { FocusOptions } from '../../model/focus.ts'
+import { generationsUpShown, type FocusOptions } from '../../model/focus.ts'
 
 const CHOICES: { value: number; label: string }[] = [
   { value: 0, label: 'None' },
@@ -10,6 +10,14 @@ const CHOICES: { value: number; label: string }[] = [
   { value: Infinity, label: 'All' },
 ]
 
+const ACROSS: { value: number; label: string }[] = [
+  { value: 0, label: 'None' },
+  { value: 1, label: 'Aunts, uncles & 1st cousins' },
+  { value: 2, label: '+ Great-aunts/uncles & 2nd cousins' },
+  { value: 3, label: '+ 3rd cousins' },
+  { value: 4, label: '+ 4th cousins' },
+]
+
 interface Props {
   name: string
   options: FocusOptions
@@ -19,14 +27,14 @@ interface Props {
 
 /** Bar over the tree while it's focused on one person. */
 export default function FocusBar({ name, options, onChange, onExit }: Props) {
-  const select = (key: keyof FocusOptions, label: string) => (
+  const select = (key: keyof FocusOptions, label: string, choices = CHOICES) => (
     <label className="focus-select">
       <span>{label}</span>
       <select
         value={String(options[key])}
         onChange={(e) => onChange({ ...options, [key]: Number(e.target.value) })}
       >
-        {CHOICES.map((c) => (
+        {choices.map((c) => (
           <option key={c.label} value={String(c.value)}>{c.label}</option>
         ))}
       </select>
@@ -39,10 +47,17 @@ export default function FocusBar({ name, options, onChange, onExit }: Props) {
       </span>
       {select('up', 'Generations up')}
       {select('down', 'Generations down')}
+      {select('across', 'Relatives across', ACROSS)}
       <button type="button" className="btn btn-small btn-primary" onClick={onExit}>
         Show everyone
       </button>
-      {options.up === 0 && <span className="focus-note">Brothers &amp; sisters show when parents are shown.</span>}
+      {generationsUpShown(options) > options.up ? (
+        <span className="focus-note">
+          {options.across === 1 ? 'Grandparents' : 'Shared ancestors'} are shown too, to connect the cousins.
+        </span>
+      ) : (
+        options.up === 0 && <span className="focus-note">Brothers &amp; sisters show when parents are shown.</span>
+      )}
     </div>
   )
 }

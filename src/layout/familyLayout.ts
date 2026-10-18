@@ -312,17 +312,20 @@ export function layoutFamily(f: Family, L = LAYOUT, view?: ViewOrder): TreeLayou
     // Positions used while ordering and placing (left edge of each chain).
     const pos = new Map<Chain, number>()
     const gapAfter = (row: Chain[], i: number) => (row[i].group === row[i + 1].group ? L.siblingGap : L.groupGap)
+    /** Left edge of each card. Partners start side by side but may move apart later. */
+    const left = new Map<string, number>()
+    const setChain = (c: Chain, x: number) => {
+      pos.set(c, x)
+      c.members.forEach((m, i) => left.set(m, x + i * (L.cardWidth + L.partnerGap)))
+    }
     const pack = (row: Chain[]) => {
       let x = 0
       row.forEach((c, i) => {
-        pos.set(c, x)
+        setChain(c, x)
         x += c.width + (i < row.length - 1 ? gapAfter(row, i) : 0)
       })
     }
-    const center = (id: string) => {
-      const c = chainOf.get(id)!
-      return pos.get(c)! + c.members.indexOf(id) * (L.cardWidth + L.partnerGap) + L.cardWidth / 2
-    }
+    const center = (id: string) => left.get(id)! + L.cardWidth / 2
     const unionX = (fam: FamilyUnit) => avg(fam.parents.filter((p) => inComp.has(p)).map(center))
     const childrenCenter = (chain: Chain): number | null => {
       const kids = chain.members.flatMap((m) => childrenOf.get(m) ?? []).filter((k) => inComp.has(k))
@@ -371,55 +374,93 @@ export function layoutFamily(f: Family, L = LAYOUT, view?: ViewOrder): TreeLayou
     for (let g = 1; g <= maxGen; g++) reorder(rows[g], groupKey)
 
     // ---- X positions: alternate "children under parents" and "parents over children" ----
-    const downPass = (g: number) => {
-      const row = rows[g]
-      const desired = row.map((c) => pos.get(c)!)
-      let i = 0
-      while (i < row.length) {
-        let j = i
-        while (j + 1 < row.length && row[j + 1].group === row[i].group) j++
-        const fam = families.get(row[i].group)
-        const span = pos.get(row[j])! + row[j].width - pos.get(row[i])!
-        if (fam) {
-          const start = unionX(fam) - span / 2
-          for (let k = i; k <= j; k++) desired[k] = start + (pos.get(row[k])! - pos.get(row[i])!)
-        } else if (row[i].families.length) {
-          desired[i] = groupKey(row[i]) - row[i].width / 2
+    // Each card is placed on its own, so partners can move apart when both of their
+    // families need the room. That keeps every line from parents to children straight.
+    interface RowCards { ids: string[]; chain: Chain[]; gaps: number[]; packed: number[] }
+    const rowCards = (row: Chain[]): RowCards => {
+      const ids: string[] = []
+      const chain: Chain[] = []
+      const gaps: number[] = []
+      row.forEach((c, ci) => {
+        c.members.forEach((m, mi) => {
+          if (ids.length) gaps.push(mi > 0 ? L.partnerGap : gapAfter(row, ci - 1))
+          ids.push(m)
+          chain.push(c)
+        })
+      })
+      // Card centres with everyone as close together as allowed.
+      const packed: number[] = []
+      ids.forEach((_, i) => packed.push(i === 0 ? 0 : packed[i - 1] + L.cardWidth + gaps[i - 1]))
+      return { ids, chain, gaps, packed }
+    }
+    /** Cards with no wish of their own stay next to a partner who has one, or where they are. */
+    const fillIn = (r: RowCards, want: (number | null)[]) => {
+      const out = [...want]
+      r.ids.forEach((id, i) => {
+        if (want[i] !== null) return
+        let best = -1
+        for (let j = 0; j < r.ids.length; j++) {
+          if (r.chain[j] === r.chain[i] && want[j] !== null && (best === -1 || Math.abs(j - i) < Math.abs(best - i))) best = j
         }
-        i = j + 1
+        out[i] = best === -1 ? center(id) : want[best]! + r.packed[i] - r.packed[best]
+      })
+      return out as number[]
+    }
+    /** An only child's line to their parents is a single straight drop, so it should never bend. */
+    const ONLY_CHILD = 1e6
+    const isOnlyChild = (id: string) => {
+      const fam = families.get(familyKeyOf.get(id) ?? '')
+      return !!fam && fam.parents.some((p) => inComp.has(p)) && fam.children.filter((k) => inComp.has(k)).length === 1
+    }
+    const place = (r: RowCards, wantCentres: number[], weights: number[]) => {
+      const lefts = isotonicPlace(
+        wantCentres.map((x) => x - L.cardWidth / 2),
+        r.ids.map(() => L.cardWidth),
+        r.gaps,
+        weights,
+      )
+      r.ids.forEach((id, i) => left.set(id, lefts[i]))
+    }
+    const downPass = (g: number) => {
+      const r = rowCards(rows[g])
+      const want: (number | null)[] = r.ids.map(() => null)
+      for (const fam of families.values()) {
+        const idx = r.ids.map((id, i) => (familyKeyOf.get(id) === fam.key ? i : -1)).filter((i) => i >= 0)
+        if (!idx.length || !fam.parents.some((p) => inComp.has(p))) continue
+        // Centre the brothers & sisters (not their partners) under their parents.
+        const mid = (r.packed[idx[0]] + r.packed[idx[idx.length - 1]]) / 2
+        for (const i of idx) want[i] = unionX(fam) + r.packed[i] - mid
       }
-      place(row, desired)
+      place(r, fillIn(r, want), r.ids.map((id) => (isOnlyChild(id) ? ONLY_CHILD : 1)))
     }
     const upPass = (g: number) => {
-      const row = rows[g]
-      const desired = row.map((c) => {
-        const offsets: number[] = []
+      const r = rowCards(rows[g])
+      const want = r.ids.map((id, i): number | null => {
+        const targets: number[] = []
         for (const fam of families.values()) {
-          const mine = fam.parents.filter((p) => chainOf.get(p) === c)
+          if (!fam.parents.includes(id)) continue
           const kids = fam.children.filter((k) => inComp.has(k))
-          if (!mine.length || !kids.length) continue
+          if (!kids.length) continue
           const kidCenters = kids.map(center)
           const target = (Math.min(...kidCenters) + Math.max(...kidCenters)) / 2
-          // Where this family's join point sits relative to the chain's left edge.
-          const join = avg(fam.parents.filter((p) => inComp.has(p)).map(center)) - pos.get(c)!
-          offsets.push(target - join)
+          // Sit beside the other parent so that their join point is over the children.
+          const onRow = fam.parents.map((p) => r.ids.indexOf(p)).filter((j) => j >= 0)
+          targets.push(target + r.packed[i] - avg(onRow.map((j) => r.packed[j])))
         }
-        return offsets.length ? avg(offsets) : pos.get(c)!
+        return targets.length ? avg(targets) : null
       })
-      place(row, desired)
-    }
-    const place = (row: Chain[], desired: number[]) => {
-      const lefts = isotonicPlace(
-        desired,
-        row.map((c) => c.width),
-        row.slice(0, -1).map((_, i) => gapAfter(row, i)),
-      )
-      row.forEach((c, i) => pos.set(c, lefts[i]))
+      // An only child already sits under their parents: moving them would bend that line.
+      r.ids.forEach((id, i) => {
+        if (isOnlyChild(id)) want[i] = center(id)
+      })
+      place(r, fillIn(r, want), r.ids.map((id) => (isOnlyChild(id) ? ONLY_CHILD : 1)))
     }
     for (let round = 0; round < 8; round++) {
       for (let g = 1; g <= maxGen; g++) downPass(g)
       for (let g = maxGen - 1; g >= 0; g--) upPass(g)
     }
+    // Finish with children under their parents, so only children end up straight below them.
+    for (let g = 1; g <= maxGen; g++) downPass(g)
 
     // Record the final arrangement so a drag can be turned into a new order.
     for (const row of rows) {
@@ -576,7 +617,7 @@ function avg(xs: number[]): number {
  * Place items left → right as close as possible to their desired left edges,
  * keeping their order and minimum gaps (least squares, via pool-adjacent-violators).
  */
-export function isotonicPlace(desired: number[], widths: number[], gaps: number[]): number[] {
+export function isotonicPlace(desired: number[], widths: number[], gaps: number[], weights?: number[]): number[] {
   const n = desired.length
   const offset: number[] = []
   for (let i = 0, o = 0; i < n; i++) {
@@ -584,17 +625,19 @@ export function isotonicPlace(desired: number[], widths: number[], gaps: number[
     o += widths[i] + (gaps[i] ?? 0)
   }
   // Solve for y_i = x_i - offset_i, which must be non-decreasing.
-  const blocks: { sum: number; count: number }[] = []
+  // Heavier items move less when two wishes clash.
+  const blocks: { sum: number; weight: number; count: number }[] = []
   for (let i = 0; i < n; i++) {
-    blocks.push({ sum: desired[i] - offset[i], count: 1 })
+    const w = weights?.[i] ?? 1
+    blocks.push({ sum: w * (desired[i] - offset[i]), weight: w, count: 1 })
     while (blocks.length > 1) {
       const b = blocks[blocks.length - 1]
       const a = blocks[blocks.length - 2]
-      if (a.sum / a.count <= b.sum / b.count) break
-      blocks.splice(blocks.length - 2, 2, { sum: a.sum + b.sum, count: a.count + b.count })
+      if (a.sum / a.weight <= b.sum / b.weight) break
+      blocks.splice(blocks.length - 2, 2, { sum: a.sum + b.sum, weight: a.weight + b.weight, count: a.count + b.count })
     }
   }
   const result: number[] = []
-  for (const b of blocks) for (let k = 0; k < b.count; k++) result.push(b.sum / b.count + offset[result.length])
+  for (const b of blocks) for (let k = 0; k < b.count; k++) result.push(b.sum / b.weight + offset[result.length])
   return result
 }

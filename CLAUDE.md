@@ -46,7 +46,10 @@ Single user for now; sharing/accounts are a future phase.
     gendered labels), `filters.ts` (search + People-list filters; add a
     filter as one entry in `FILTERS`), `details.ts` (age, Summary rows, life
     timeline, safe links for the Details view), `focus.ts` ("Focus on tree":
-    ancestors/descendants within N generations + partners + siblings, and
+    ancestors/descendants within N generations + partners + siblings, plus
+    "Relatives across": `across` = 1 adds everyone descended from the
+    grandparents (aunts/uncles, 1st cousins), 2 from the great-grandparents,
+    etc., showing those shared ancestors even if Generations up is lower; and
     `subFamily` to cut the family down before layout). `testFamily.ts` builds made-up
     families for tests.
   - `src/state/`: `treeReducer.ts` (all edits go through it; bumps `revision`
@@ -60,8 +63,9 @@ Single user for now; sharing/accounts are a future phase.
     is one true generation even when one side goes back further, then the
     "child below parents / partners level" safety rules for odd families →
     partner "chains" per row → sibling groups ordered under parents via
-    barycentre sweeps → x positions by alternating least-squares passes
-    (`isotonicPlace`) → lines). Returns card positions + line polylines.
+    barycentre sweeps → x positions per card by alternating weighted
+    least-squares passes (`isotonicPlace`); partners may move apart so an
+    only child always sits straight under their parents → lines). Returns card positions + line polylines.
     `layoutFamily(f, L, view)` takes a view's `siblingOrder` / `chainOrder`
     and applies them with `applyOrder` (listed people take the same slots in
     the saved order; people added later keep their default spot). It also
